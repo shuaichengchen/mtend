@@ -50,13 +50,13 @@ def inject_custom_css():
             linear-gradient(135deg, #f7faff 0%, #eef4ff 45%, #f9fbff 100%);
     }
 
-.block-container {
-    padding-top: 1.1rem;
-    padding-bottom: 2rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    max-width: 1350px;
-}
+    .block-container {
+        padding-top: 1.1rem;
+        padding-bottom: 2rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
+        max-width: 1480px;
+    }
 
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
@@ -1353,8 +1353,91 @@ def render_state_panel(exp_name, row, params, result, progress):
         unsafe_allow_html=True
     )
 
+
 def render_experiment_demo(experiment_name, df, params, result):
     total = len(df)
+    idx, play_clicked, speed = get_manual_index(df, experiment_name)
+
+    chart_placeholder = st.empty()
+
+    def draw_frame(frame_idx):
+        row = df.iloc[frame_idx]
+        progress = frame_idx / max(total - 1, 1)
+
+        with chart_placeholder.container():
+            top_left, top_mid, top_right = st.columns([1.2, 1.2, 0.95])
+
+            with top_left:
+                if experiment_name == "平抛运动":
+                    st.pyplot(plot_projectile_trajectory(df, params["h"], frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "自由落体":
+                    st.pyplot(plot_freefall_main(df, frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "欧姆定律":
+                    st.pyplot(plot_ohm(df, frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "凸透镜成像":
+                    st.pyplot(plot_lens(df, params["f"], frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "牛顿第二定律":
+                    st.pyplot(plot_newton(df, frame_idx), use_container_width=True, clear_figure=True)
+                else:
+                    st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
+
+            with top_mid:
+                if experiment_name == "平抛运动":
+                    st.pyplot(draw_projectile_device(params["h"], row, params["v0"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "自由落体":
+                    st.pyplot(draw_freefall_device(params["h"], row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "欧姆定律":
+                    st.pyplot(draw_ohm_device(row, params["resistance"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "凸透镜成像":
+                    st.pyplot(draw_lens_device(params["f"] / 4, row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "牛顿第二定律":
+                    st.pyplot(draw_newton_device(row, params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                else:
+                    st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+
+            with top_right:
+                render_state_panel(experiment_name, row, params, result, progress)
+
+            st.markdown("### 引导思考")
+            if experiment_name == "平抛运动":
+                st.write("1. 为什么水平方向速度几乎不变？")
+                st.write("2. 为什么竖直方向速度越来越大？")
+                st.write("3. 为什么轨迹不是直线而是抛物线？")
+            elif experiment_name == "自由落体":
+                st.write("1. 为什么下落越到后面越快？")
+                st.write("2. 为什么速度—时间图像接近直线？")
+                st.write("3. 为什么位移与时间平方有关？")
+            elif experiment_name == "欧姆定律":
+                st.write("1. 为什么电压越大，电流越大？")
+                st.write("2. 为什么图像是一条直线？")
+                st.write("3. 电阻改变后图像斜率会怎样变化？")
+            elif experiment_name == "凸透镜成像":
+                st.write("1. 物体靠近焦点时像距为什么会明显变化？")
+                st.write("2. 为什么焦内会形成虚像？")
+                st.write("3. 物距变化时像的正倒和大小如何变化？")
+            elif experiment_name == "牛顿第二定律":
+                st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
+                st.write("2. 图像过原点说明了什么？")
+                st.write("3. 如果质量变大，图像会发生什么变化？")
+            else:
+                st.write("1. 为什么加热时间越长温度越高？")
+                st.write("2. 为什么质量或比热容变大时升温会变慢？")
+                st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+
+        return row
+
+    current_row = draw_frame(idx)
+
+    if play_clicked:
+        step = max(1, int(speed))
+        for frame_idx in range(idx, total, step):
+            st.session_state[f"frame_{experiment_name}_实验过程"] = frame_idx
+            current_row = draw_frame(frame_idx)
+            time.sleep(0.08)
+
+        st.session_state[f"frame_{experiment_name}_实验过程"] = total - 1
+
+    return current_row
 
 
 def render_analysis_tab(experiment_name, df, params):
