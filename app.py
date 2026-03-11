@@ -22,7 +22,7 @@ matplotlib.rcParams["axes.unicode_minus"] = False
 matplotlib.rcParams["font.family"] = "sans-serif"
 
 st.set_page_config(
-    page_title="AI赋能中学物理虚拟实验与智能测评平台",
+    page_title="中学物理虚拟实验与智能测评平台",
     page_icon="🧪",
     layout="wide"
 )
@@ -1637,8 +1637,8 @@ def render_plot_notation_help(experiment_name):
 
 def render_interactive_experiment(experiment_name, params):
     st.markdown('<div class="interactive-shell">', unsafe_allow_html=True)
-    st.markdown("#### 交互实验（新增）")
-    st.caption("拖动或调节参数即可交互观察。该模块是在原有实验演示基础上新增的前端互动方案，不影响原来的课堂流程与测评功能。")
+    st.markdown("#### 交互实验")
+    st.caption("拖动或调节参数即可交互观察。")
 
     def show_html(html, height=520):
         components.html(html, height=height, scrolling=False)
@@ -1950,9 +1950,9 @@ if st.session_state.entry_role is None:
     st.markdown(
         """
         <div class="login-shell">
-            <div class="hero-title">AI赋能中学物理虚拟实验与智能测评平台</div>
+            <div class="hero-title">中学物理虚拟实验与智能测评平台</div>
             <div class="hero-subtitle">
-                面向课堂演示、实验探究、过程评价与教师诊断的一体化平台。请先选择身份，再进入对应页面。
+                目前仅供咸阳师范学院马田毕业设计使用。请先选择身份，再进入对应页面。
             </div>
         </div>
         """,
@@ -2097,11 +2097,11 @@ if role == "学生端":
     st.markdown(
         f"""
         <div class="hero-box">
-            <div class="hero-title">AI赋能中学物理虚拟实验与智能测评平台</div>
+            <div class="hero-title">中学物理虚拟实验与智能测评平台</div>
             <div class="hero-subtitle">
                 当前学生：<b>{student_name}</b>（{class_name}，学号：{student_id}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
+                平台目前仅用于咸阳师范学院马田毕业设计使用。
             </div>
         </div>
         """,
@@ -2334,4 +2334,4 @@ else:
             st.dataframe(filtered, use_container_width=True, height=320)
             st.download_button("下载筛选后的教师统计数据 CSV", to_csv_bytes(filtered), file_name="教师端统计数据.csv", mime="text/csv")
 
-st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，平台目前仅用于咸阳师范学院马田毕业设计使用。</div>', unsafe_allow_html=True)
