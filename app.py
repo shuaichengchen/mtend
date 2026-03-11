@@ -2,6 +2,7 @@ import math
 import os
 import re
 import json
+import time
 import hashlib
 from datetime import datetime
 
@@ -10,21 +11,17 @@ import pandas as pd
 import streamlit as st
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Circle, FancyArrow, Polygon, FancyBboxPatch
-
-try:
-    from streamlit_autorefresh import st_autorefresh
-    AUTO_REFRESH_AVAILABLE = True
-except Exception:
-    AUTO_REFRESH_AVAILABLE = False
-
+from matplotlib.patches import Rectangle, Circle, FancyArrow, Polygon
 
 # =========================
 # 基础设置
 # =========================
 matplotlib.rcParams["font.sans-serif"] = [
-    "Microsoft YaHei", "SimHei", "SimSun", "KaiTi", "FangSong",
-    "Noto Sans CJK SC", "Arial Unicode MS", "DejaVu Sans"
+    "DejaVu Sans",
+    "Arial Unicode MS",
+    "Noto Sans CJK SC",
+    "SimHei",
+    "Microsoft YaHei"
 ]
 matplotlib.rcParams["axes.unicode_minus"] = False
 matplotlib.rcParams["font.family"] = "sans-serif"
@@ -67,7 +64,7 @@ def inject_custom_css():
     }
 
     .hero-box {
-        background: rgba(255,255,255,0.86);
+        background: rgba(255,255,255,0.88);
         border: 1px solid rgba(90,120,200,0.14);
         border-radius: 28px;
         padding: 1.4rem 1.6rem;
@@ -396,68 +393,54 @@ def flame_polygon(center_x, center_y, scale=1.0, phase=0.0):
     return pts
 
 
-def get_animation_index(df, exp_name, title="实验过程"):
+# =========================
+# 手动帧控制
+# =========================
+def get_manual_index(df, exp_name, title="实验过程"):
     total = len(df)
-    anim_key = f"anim_{exp_name}_{title}"
     frame_key = f"frame_{exp_name}_{title}"
     speed_key = f"speed_{exp_name}_{title}"
 
-    if frame_key not in st.session_state.frame_map:
-        st.session_state.frame_map[frame_key] = 0
-    if anim_key not in st.session_state.playing_map:
-        st.session_state.playing_map[anim_key] = False
-    if speed_key not in st.session_state.speed_map:
-        st.session_state.speed_map[speed_key] = 4
+    if frame_key not in st.session_state:
+        st.session_state[frame_key] = 0
+    if speed_key not in st.session_state:
+        st.session_state[speed_key] = 8
 
-    c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1.2, 3])
+    c1, c2, c3, c4 = st.columns([1, 1, 1.2, 3])
+
+    play_clicked = False
 
     with c1:
-        if st.button("▶ 播放", key=f"play_{frame_key}"):
-            st.session_state.playing_map[anim_key] = True
+        play_clicked = st.button("▶ 播放", key=f"play_{frame_key}")
 
     with c2:
-        if st.button("⏸ 暂停", key=f"pause_{frame_key}"):
-            st.session_state.playing_map[anim_key] = False
+        if st.button("⟲ 重置", key=f"reset_{frame_key}"):
+            st.session_state[frame_key] = 0
 
     with c3:
-        if st.button("⟲ 重置", key=f"reset_{frame_key}"):
-            st.session_state.playing_map[anim_key] = False
-            st.session_state.frame_map[frame_key] = 0
-
-    with c4:
         speed_options = [1, 2, 4, 8, 12, 16]
         speed = st.selectbox(
             "倍速",
             speed_options,
-            index=speed_options.index(st.session_state.speed_map[speed_key]),
+            index=speed_options.index(st.session_state[speed_key]),
             key=f"speed_select_{frame_key}"
         )
-        st.session_state.speed_map[speed_key] = speed
+        st.session_state[speed_key] = speed
 
-    with c5:
-        current_progress = st.session_state.frame_map[frame_key] / max(total - 1, 1)
+    with c4:
+        progress = st.session_state[frame_key] / max(total - 1, 1)
         manual_progress = st.slider(
             "拖动查看实验过程",
             0.0, 1.0,
-            float(current_progress),
+            float(progress),
             0.001,
             key=f"slider_{frame_key}"
         )
 
-    if not st.session_state.playing_map[anim_key]:
-        st.session_state.frame_map[frame_key] = min(total - 1, int(manual_progress * (total - 1)))
+    if not play_clicked:
+        st.session_state[frame_key] = min(total - 1, int(manual_progress * (total - 1)))
 
-    if st.session_state.playing_map[anim_key]:
-        if AUTO_REFRESH_AVAILABLE:
-            st_autorefresh(interval=120, key=f"auto_{frame_key}")
-        st.session_state.frame_map[frame_key] += st.session_state.speed_map[speed_key]
-
-        if st.session_state.frame_map[frame_key] >= total - 1:
-            st.session_state.frame_map[frame_key] = total - 1
-            st.session_state.playing_map[anim_key] = False
-
-    idx = max(0, min(st.session_state.frame_map[frame_key], total - 1))
-    return idx
+    return st.session_state[frame_key], play_clicked, st.session_state[speed_key]
 
 
 # =========================
@@ -649,6 +632,7 @@ def simulate_specific_heat(mass, c, power, total_time, dt):
 
 # =========================
 # 图像与装置演示
+# 图中统一使用英文，避免云端中文字体缺失
 # =========================
 def plot_projectile_trajectory(df, h, idx):
     fig, ax = plt.subplots(figsize=(8.8, 5.2))
@@ -664,7 +648,7 @@ def plot_projectile_trajectory(df, h, idx):
 
     if idx < len(df) - 1:
         ax.scatter(x[-1], 0, s=90, color="#ffb56b", edgecolor="white", linewidth=1.2, zorder=4)
-        ax.text(x[-1], 0.35, "预计落点", ha="center", fontsize=10, color="#9b5a00")
+        ax.text(x[-1], 0.35, "Landing", ha="center", fontsize=10, color="#9b5a00")
 
     vx = df["水平速度vx(m/s)"].iloc[idx]
     vy = df["竖直速度vy(m/s)"].iloc[idx]
@@ -674,9 +658,9 @@ def plot_projectile_trajectory(df, h, idx):
     ax.arrow(x[idx], y[idx], 0, vy * scale, width=0.03, head_width=0.18, head_length=0.25,
              color="#e66767", length_includes_head=True, zorder=6)
 
-    ax.set_title("平抛运动轨迹演示", fontsize=16, fontweight="bold")
-    ax.set_xlabel("水平位移 x / m")
-    ax.set_ylabel("高度 y / m")
+    ax.set_title("Projectile Trajectory", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Horizontal displacement x / m")
+    ax.set_ylabel("Height y / m")
     ax.axhline(0, linestyle="--", alpha=0.35, color="#5776a2")
     fig.tight_layout()
     return fig
@@ -708,7 +692,7 @@ def draw_projectile_device(h, row, v0, idx, total):
 
     ax.add_patch(FancyArrow(2.0, h - 0.16, 1.0, 0, width=0.04, head_width=0.18, head_length=0.22,
                             color="#3d78c5", zorder=5))
-    ax.text(2.25, h + 0.28, f"v₀={v0:.1f} m/s", fontsize=11, color="#274f85")
+    ax.text(2.25, h + 0.28, f"v0={v0:.1f} m/s", fontsize=11, color="#274f85")
 
     vy_show = row["竖直速度vy(m/s)"]
     ax.add_patch(FancyArrow(ball_x, ball_y, 0.8, 0, width=0.03, head_width=0.15, head_length=0.18,
@@ -724,10 +708,10 @@ def draw_projectile_device(h, row, v0, idx, total):
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
     ax.text((ball_x + 2.1) / 2, -0.48, f"x={row['水平位移x(m)']:.2f}m", ha="center", fontsize=10)
 
-    ax.text(ball_x + 0.22, ball_y + 0.22, "小球", fontsize=10)
-    ax.text(xmax - 2.2, ymax - 0.55, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(ball_x + 0.22, ball_y + 0.22, "Ball", fontsize=10)
+    ax.text(xmax - 2.2, ymax - 0.55, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("平抛实验装置与运动过程", fontsize=15, fontweight="bold")
+    ax.set_title("Projectile Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -740,9 +724,9 @@ def plot_projectile_velocity(df, idx):
     ax.plot(t, df["竖直速度vy(m/s)"], label="vy-t", color="#e46b6b", linewidth=2.3)
     ax.plot(t, df["合速度v(m/s)"], label="v-t", color="#ff9f3a", linewidth=2.3)
     ax.scatter(t.iloc[idx], df["合速度v(m/s)"].iloc[idx], s=95, color="#ff9f3a", edgecolor="white", zorder=5)
-    ax.set_title("速度—时间图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("速度 / (m·s⁻¹)")
+    ax.set_title("Velocity - Time", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Time t / s")
+    ax.set_ylabel("Velocity / (m·s⁻¹)")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -755,18 +739,18 @@ def plot_freefall_main(df, idx):
     y = df["高度y(m)"]
     v = df["速度v(m/s)"]
 
-    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="高度 y-t")
+    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="Height y-t")
     ax.scatter(t[:idx+1], y[:idx+1], color="#9eceff", s=20, alpha=0.5)
     ax.scatter(t.iloc[idx], y.iloc[idx], color="#ff9a2e", s=115, edgecolor="white", zorder=5)
 
     ax2 = ax.twinx()
-    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="速度 v-t")
+    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="Velocity v-t")
     ax2.scatter(t.iloc[idx], v.iloc[idx], color="#ef6d6d", s=85, edgecolor="white", zorder=5)
 
-    ax.set_title("自由落体高度与速度变化", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("高度 y / m")
-    ax2.set_ylabel("速度 v / (m·s⁻¹)")
+    ax.set_title("Free Fall: Height & Velocity", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Time t / s")
+    ax.set_ylabel("Height y / m")
+    ax2.set_ylabel("Velocity v / (m·s⁻¹)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -792,14 +776,14 @@ def draw_freefall_device(h, row, idx, total):
     arrow_len = min(1.5, row["速度v(m/s)"] * 0.08 + 0.25)
     ax.add_patch(FancyArrow(1.0, ball_y + 0.65, 0, -arrow_len, width=0.05,
                             head_width=0.18, head_length=0.18, color="#4e7bd1"))
-    ax.text(1.18, ball_y + 0.2, "速度方向", fontsize=10)
+    ax.text(1.18, ball_y + 0.2, "Velocity", fontsize=10)
 
     ax.annotate("", xy=(-0.7, h), xytext=(-0.7, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
     ax.text(-1.0, h / 2, f"h={h:.1f}m", rotation=90, va="center", fontsize=10)
-    ax.text(1.7, h + 0.25, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(1.7, h + 0.25, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("自由落体实验装置与下落过程", fontsize=15, fontweight="bold")
+    ax.set_title("Free Fall Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -812,9 +796,9 @@ def plot_ohm(df, idx):
     ax.plot(u, i, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(u[:idx+1], i[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(u.iloc[idx], i.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("欧姆定律 I-U 图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("电压 U / V")
-    ax.set_ylabel("电流 I / A")
+    ax.set_title("Ohm's Law: I-U Curve", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Voltage U / V")
+    ax.set_ylabel("Current I / A")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -846,7 +830,7 @@ def draw_ohm_device(row, resistance, idx, total):
     ax.plot([4.1, 3.2], [3, 3], linewidth=2.1, color="#2f4058")
 
     ax.add_patch(Rectangle((5.0, 1.55), 0.65, 0.95, fill=False, linewidth=2.2, edgecolor="#d56e6e"))
-    ax.text(5.08, 2.65, "电源", fontsize=10, color="#8d3f3f")
+    ax.text(5.08, 2.65, "Power", fontsize=10, color="#8d3f3f")
 
     dots = np.linspace(0.75, 5.8, 8)
     for i, _ in enumerate(dots):
@@ -858,9 +842,9 @@ def draw_ohm_device(row, resistance, idx, total):
     ax.text(2.72, 1.18, f"R={resistance:.1f}Ω", fontsize=11, color="#475d84")
     ax.text(0.78, 2.58, f"I={row['电流I(A)']:.2f}A", fontsize=11, color="#475d84")
     ax.text(2.82, 3.37, f"U={row['电压U(V)']:.2f}V", fontsize=11, color="#475d84")
-    ax.text(5.7, 3.55, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(5.7, 3.55, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("欧姆定律实验电路示意", fontsize=15, fontweight="bold")
+    ax.set_title("Circuit Diagram", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -871,11 +855,11 @@ def plot_lens(df, f, idx):
     u = df["物距u(cm)"]
     v = df["像距v(cm)"]
     ax.plot(u, v, marker="o", color="#3f7fd0", linewidth=2.4)
-    ax.axvline(f, linestyle="--", alpha=0.55, color="#e58a4f", label="焦距 f")
+    ax.axvline(f, linestyle="--", alpha=0.55, color="#e58a4f", label="Focus f")
     ax.scatter(u.iloc[idx], v.iloc[idx], s=125, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("凸透镜物距—像距关系图", fontsize=16, fontweight="bold")
-    ax.set_xlabel("物距 u / cm")
-    ax.set_ylabel("像距 v / cm")
+    ax.set_title("Lens: Object Distance vs Image Distance", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Object distance u / cm")
+    ax.set_ylabel("Image distance v / cm")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -894,8 +878,8 @@ def draw_lens_device(f, row, idx, total):
     ax.axvline(2 * f, linestyle=":", alpha=0.35, color="#b4bfd8")
     ax.text(-f, -0.4, "F", ha="center", fontsize=11)
     ax.text(f, -0.4, "F", ha="center", fontsize=11)
-    ax.text(-2*f, -0.4, "2F", ha="center", fontsize=10)
-    ax.text(2*f, -0.4, "2F", ha="center", fontsize=10)
+    ax.text(-2 * f, -0.4, "2F", ha="center", fontsize=10)
+    ax.text(2 * f, -0.4, "2F", ha="center", fontsize=10)
 
     u = row["物距u(cm)"] / 4
     v = np.clip(row["像距v(cm)"] / 4, -9.2, 9.2)
@@ -906,17 +890,17 @@ def draw_lens_device(f, row, idx, total):
     obj_h = 1.45
     ax.add_patch(FancyArrow(obj_x, 0, 0, obj_h, width=0.08, head_width=0.28, head_length=0.18,
                             color="#ff7f7f", zorder=5))
-    ax.text(obj_x - 0.3, obj_h + 0.18, "物体", fontsize=10)
+    ax.text(obj_x - 0.3, obj_h + 0.18, "Object", fontsize=10)
 
     img_h = 1.2 if image_size == "缩小" else (1.9 if image_size == "放大" else 1.45)
     if image_type == "倒立实像":
         ax.add_patch(FancyArrow(v, 0, 0, -img_h, width=0.08, head_width=0.28, head_length=0.18,
                                 color="#4a7bd1", zorder=5))
-        ax.text(v - 0.28, -img_h - 0.35, "像", fontsize=10)
+        ax.text(v - 0.28, -img_h - 0.35, "Image", fontsize=10)
     else:
         ax.add_patch(FancyArrow(v, 0, 0, img_h, width=0.08, head_width=0.28, head_length=0.18,
                                 color="#4a7bd1", zorder=5))
-        ax.text(v - 0.28, img_h + 0.15, "像", fontsize=10)
+        ax.text(v - 0.28, img_h + 0.15, "Image", fontsize=10)
 
     if image_type == "倒立实像":
         ax.plot([obj_x, 0, v], [obj_h, obj_h, 0], color="#f2a444", linewidth=1.6)
@@ -930,9 +914,9 @@ def draw_lens_device(f, row, idx, total):
     ax.text(-9.3, 2.35, f"u={row['物距u(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(3.8, 2.35, f"v={row['像距v(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(0.7, 2.35, f"{image_type} / {image_size}", fontsize=10, color="#475d84")
-    ax.text(7.0, 2.75, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(7.0, 2.75, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("凸透镜成像实验示意", fontsize=15, fontweight="bold")
+    ax.set_title("Lens Imaging Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -945,9 +929,9 @@ def plot_newton(df, idx):
     ax.plot(f, a, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(f[:idx+1], a[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(f.iloc[idx], a.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("牛顿第二定律 F-a 图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("合外力 F / N")
-    ax.set_ylabel("加速度 a / (m/s²)")
+    ax.set_title("Newton's Second Law: F-a Curve", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Force F / N")
+    ax.set_ylabel("Acceleration a / (m/s²)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -974,9 +958,9 @@ def draw_newton_device(row, mass, idx, total):
     ax.text(cart_x + 2.2, 1.58, f"F={row['力F(N)']:.2f}N", fontsize=11, color="#8a4141")
     ax.text(cart_x + 0.2, 2.02, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(cart_x + 0.2, 2.34, f"a={row['加速度a(m/s²)']:.2f}m/s²", fontsize=11, color="#475d84")
-    ax.text(8.2, 2.8, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(8.2, 2.8, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("牛顿第二定律实验示意", fontsize=15, fontweight="bold")
+    ax.set_title("Newton Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -989,9 +973,9 @@ def plot_heat(df, idx):
     ax.plot(t, temp, color="#ef6d6d", linewidth=2.6)
     ax.fill_between(t[:idx+1], temp[:idx+1], color="#ffc0b2", alpha=0.15)
     ax.scatter(t.iloc[idx], temp.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("温度—时间图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("温度 T / ℃")
+    ax.set_title("Temperature - Time", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Time t / s")
+    ax.set_ylabel("Temperature T / ℃")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1024,23 +1008,23 @@ def draw_heat_device(row, power, mass, idx, total):
     ax.text(0.8, 2.5, f"P={power:.0f}W", fontsize=11, color="#475d84")
     ax.text(0.8, 2.05, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(0.8, 1.6, f"T={row['温度T(℃)']:.2f}℃", fontsize=11, color="#475d84")
-    ax.text(6.95, 2.8, f"进度：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(6.95, 2.8, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("比热容与升温实验示意", fontsize=15, fontweight="bold")
+    ax.set_title("Heating Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
 
 
 def plot_profile(concept, image_score, rule_score, process_score):
-    labels = ["概念理解", "图像分析", "规律总结", "过程参与"]
+    labels = ["Concept", "Image", "Rule", "Process"]
     values = [concept, image_score, rule_score, process_score]
     colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0"]
     fig, ax = plt.subplots(figsize=(7.8, 4.8))
     ax.bar(labels, values, color=colors)
     ax.set_ylim(0, 100)
-    ax.set_title("学生能力画像", fontsize=16, fontweight="bold")
-    ax.set_ylabel("得分")
+    ax.set_title("Student Profile", fontsize=16, fontweight="bold")
+    ax.set_ylabel("Score")
     ax.grid(axis="y", alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1051,9 +1035,9 @@ def plot_growth_curve(df_student):
     x = list(range(1, len(df_student) + 1))
     ax.plot(x, df_student["综合得分"], marker="o", linewidth=2.5, color="#3f7fd0")
     ax.fill_between(x, df_student["综合得分"], alpha=0.10, color="#8ec5ff")
-    ax.set_title("个人成绩成长曲线", fontsize=16, fontweight="bold")
-    ax.set_xlabel("测试次数")
-    ax.set_ylabel("综合得分")
+    ax.set_title("Growth Curve", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Attempt")
+    ax.set_ylabel("Total score")
     ax.set_ylim(0, 100)
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -1198,7 +1182,7 @@ def analyze_summary_text(text, exp_name):
         level = "待提升"
 
     feedback = []
-    if hit_keywords < max(2, len(keywords)//3):
+    if hit_keywords < max(2, len(keywords) // 3):
         feedback.append("关键词覆盖较少，建议补充核心物理术语。")
     if not has_relation:
         feedback.append("总结中缺少变量关系描述，例如“成正比”“增大”“减小”等。")
@@ -1371,70 +1355,89 @@ def render_state_panel(exp_name, row, params, result, progress):
 
 
 def render_experiment_demo(experiment_name, df, params, result):
-    idx = get_animation_index(df, experiment_name)
-    row = df.iloc[idx]
-    progress = idx / max(len(df) - 1, 1)
+    total = len(df)
+    idx, play_clicked, speed = get_manual_index(df, experiment_name)
 
-    top_left, top_mid, top_right = st.columns([1.2, 1.2, 0.95])
+    chart_placeholder = st.empty()
 
-    with top_left:
-        if experiment_name == "平抛运动":
-            st.pyplot(plot_projectile_trajectory(df, params["h"], idx), use_container_width=True, clear_figure=True)
-        elif experiment_name == "自由落体":
-            st.pyplot(plot_freefall_main(df, idx), use_container_width=True, clear_figure=True)
-        elif experiment_name == "欧姆定律":
-            st.pyplot(plot_ohm(df, idx), use_container_width=True, clear_figure=True)
-        elif experiment_name == "凸透镜成像":
-            st.pyplot(plot_lens(df, params["f"], idx), use_container_width=True, clear_figure=True)
-        elif experiment_name == "牛顿第二定律":
-            st.pyplot(plot_newton(df, idx), use_container_width=True, clear_figure=True)
-        else:
-            st.pyplot(plot_heat(df, idx), use_container_width=True, clear_figure=True)
+    def draw_frame(frame_idx):
+        row = df.iloc[frame_idx]
+        progress = frame_idx / max(total - 1, 1)
 
-    with top_mid:
-        if experiment_name == "平抛运动":
-            st.pyplot(draw_projectile_device(params["h"], row, params["v0"], idx, len(df)), use_container_width=True, clear_figure=True)
-        elif experiment_name == "自由落体":
-            st.pyplot(draw_freefall_device(params["h"], row, idx, len(df)), use_container_width=True, clear_figure=True)
-        elif experiment_name == "欧姆定律":
-            st.pyplot(draw_ohm_device(row, params["resistance"], idx, len(df)), use_container_width=True, clear_figure=True)
-        elif experiment_name == "凸透镜成像":
-            st.pyplot(draw_lens_device(params["f"] / 4, row, idx, len(df)), use_container_width=True, clear_figure=True)
-        elif experiment_name == "牛顿第二定律":
-            st.pyplot(draw_newton_device(row, params["mass"], idx, len(df)), use_container_width=True, clear_figure=True)
-        else:
-            st.pyplot(draw_heat_device(row, params["power"], params["mass"], idx, len(df)), use_container_width=True, clear_figure=True)
+        with chart_placeholder.container():
+            top_left, top_mid, top_right = st.columns([1.2, 1.2, 0.95])
 
-    with top_right:
-        render_state_panel(experiment_name, row, params, result, progress)
+            with top_left:
+                if experiment_name == "平抛运动":
+                    st.pyplot(plot_projectile_trajectory(df, params["h"], frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "自由落体":
+                    st.pyplot(plot_freefall_main(df, frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "欧姆定律":
+                    st.pyplot(plot_ohm(df, frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "凸透镜成像":
+                    st.pyplot(plot_lens(df, params["f"], frame_idx), use_container_width=True, clear_figure=True)
+                elif experiment_name == "牛顿第二定律":
+                    st.pyplot(plot_newton(df, frame_idx), use_container_width=True, clear_figure=True)
+                else:
+                    st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
 
-    st.markdown("### 引导思考")
-    if experiment_name == "平抛运动":
-        st.write("1. 为什么水平方向速度几乎不变？")
-        st.write("2. 为什么竖直方向速度越来越大？")
-        st.write("3. 为什么轨迹不是直线而是抛物线？")
-    elif experiment_name == "自由落体":
-        st.write("1. 为什么下落越到后面越快？")
-        st.write("2. 为什么速度—时间图像接近直线？")
-        st.write("3. 为什么位移与时间平方有关？")
-    elif experiment_name == "欧姆定律":
-        st.write("1. 为什么电压越大，电流越大？")
-        st.write("2. 为什么图像是一条直线？")
-        st.write("3. 电阻改变后图像斜率会怎样变化？")
-    elif experiment_name == "凸透镜成像":
-        st.write("1. 物体靠近焦点时像距为什么会明显变化？")
-        st.write("2. 为什么焦内会形成虚像？")
-        st.write("3. 物距变化时像的正倒和大小如何变化？")
-    elif experiment_name == "牛顿第二定律":
-        st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
-        st.write("2. 图像过原点说明了什么？")
-        st.write("3. 如果质量变大，图像会发生什么变化？")
-    else:
-        st.write("1. 为什么加热时间越长温度越高？")
-        st.write("2. 为什么质量或比热容变大时升温会变慢？")
-        st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+            with top_mid:
+                if experiment_name == "平抛运动":
+                    st.pyplot(draw_projectile_device(params["h"], row, params["v0"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "自由落体":
+                    st.pyplot(draw_freefall_device(params["h"], row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "欧姆定律":
+                    st.pyplot(draw_ohm_device(row, params["resistance"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "凸透镜成像":
+                    st.pyplot(draw_lens_device(params["f"] / 4, row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                elif experiment_name == "牛顿第二定律":
+                    st.pyplot(draw_newton_device(row, params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                else:
+                    st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
 
-    return row
+            with top_right:
+                render_state_panel(experiment_name, row, params, result, progress)
+
+            st.markdown("### 引导思考")
+            if experiment_name == "平抛运动":
+                st.write("1. 为什么水平方向速度几乎不变？")
+                st.write("2. 为什么竖直方向速度越来越大？")
+                st.write("3. 为什么轨迹不是直线而是抛物线？")
+            elif experiment_name == "自由落体":
+                st.write("1. 为什么下落越到后面越快？")
+                st.write("2. 为什么速度—时间图像接近直线？")
+                st.write("3. 为什么位移与时间平方有关？")
+            elif experiment_name == "欧姆定律":
+                st.write("1. 为什么电压越大，电流越大？")
+                st.write("2. 为什么图像是一条直线？")
+                st.write("3. 电阻改变后图像斜率会怎样变化？")
+            elif experiment_name == "凸透镜成像":
+                st.write("1. 物体靠近焦点时像距为什么会明显变化？")
+                st.write("2. 为什么焦内会形成虚像？")
+                st.write("3. 物距变化时像的正倒和大小如何变化？")
+            elif experiment_name == "牛顿第二定律":
+                st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
+                st.write("2. 图像过原点说明了什么？")
+                st.write("3. 如果质量变大，图像会发生什么变化？")
+            else:
+                st.write("1. 为什么加热时间越长温度越高？")
+                st.write("2. 为什么质量或比热容变大时升温会变慢？")
+                st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+
+        return row
+
+    current_row = draw_frame(idx)
+
+    if play_clicked:
+        step = max(1, int(speed))
+        for frame_idx in range(idx, total, step):
+            st.session_state[f"frame_{experiment_name}_实验过程"] = frame_idx
+            current_row = draw_frame(frame_idx)
+            time.sleep(0.08)
+
+        st.session_state[f"frame_{experiment_name}_实验过程"] = total - 1
+
+    return current_row
 
 
 def render_analysis_tab(experiment_name, df, params):
@@ -1448,8 +1451,8 @@ def render_analysis_tab(experiment_name, df, params):
             fig, ax = plt.subplots(figsize=(8.8, 5))
             ax.plot(df["时间(s)"], df["水平位移x(m)"], label="x-t", color="#3f7fd0", linewidth=2.3)
             ax.plot(df["时间(s)"], df["竖直高度y(m)"], label="y-t", color="#ef6d6d", linewidth=2.3)
-            ax.set_title("位移—时间图像", fontsize=16, fontweight="bold")
-            ax.set_xlabel("时间 t / s")
+            ax.set_title("Displacement - Time", fontsize=16, fontweight="bold")
+            ax.set_xlabel("Time t / s")
             ax.grid(True, alpha=0.22)
             ax.legend()
             fig.tight_layout()
@@ -1460,8 +1463,8 @@ def render_analysis_tab(experiment_name, df, params):
         fig, ax = plt.subplots(figsize=(8.8, 5))
         ax.plot(df["时间(s)"], df["下落位移s(m)"], label="s-t", color="#3f7fd0", linewidth=2.4)
         ax.plot(df["时间(s)"], df["速度v(m/s)"], label="v-t", color="#ef6d6d", linewidth=2.4)
-        ax.set_title("自由落体图像", fontsize=16, fontweight="bold")
-        ax.set_xlabel("时间 t / s")
+        ax.set_title("Free Fall Curves", fontsize=16, fontweight="bold")
+        ax.set_xlabel("Time t / s")
         ax.grid(True, alpha=0.22)
         ax.legend()
         fig.tight_layout()
@@ -1582,7 +1585,7 @@ if role == "学生端":
             <div class="hero-subtitle">
                 当前学生：<b>{student_name}</b>（{class_name}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台支持多实验仿真、自动播放动画、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
+                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
             </div>
         </div>
         """,
@@ -1606,8 +1609,6 @@ if role == "学生端":
 
     with tab1:
         section_title(f"{experiment_name}实验演示")
-        if not AUTO_REFRESH_AVAILABLE:
-            st.warning("未安装 streamlit-autorefresh，自动播放会受影响。上传到 Streamlit 时请确认 requirements.txt 中包含 streamlit-autorefresh")
         row = render_experiment_demo(experiment_name, df, params, result)
 
         if show_data:
@@ -1796,16 +1797,16 @@ if role == "学生端":
         st.markdown("""
 ### 已实现功能
 1. 多个中学物理实验：平抛运动、自由落体、欧姆定律、凸透镜成像、牛顿第二定律、比热容与升温  
-2. 提供自动播放动画、实验装置拟物示意图、参数调节、动态图像观察、数据表和规律总结  
+2. 提供动画演示、实验装置拟物示意图、参数调节、动态图像观察、数据表和规律总结  
 3. 实验测试与多维评价：概念理解、图像分析、规律总结、过程参与  
 4. 学生学习画像、成长曲线与历史记录  
 5. 教师端账号注册登录与教学统计分析  
 
 ### 本版重点升级
 - 六个实验都加入了更精美的实验过程展示  
-- 加入播放、暂停、重置、倍速控制  
+- 加入播放、重置、倍速控制和滑块查看  
 - 加入轨迹拖尾、动态高亮、拟物装置、速度/位移箭头  
-- 右侧加入实时指标卡与观察提示  
+- 图内文字改为英文，减少云端字体兼容问题  
 
 ### 后续可继续扩展
 - 增加更多实验模块  
@@ -1943,8 +1944,8 @@ else:
                 colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0", "#a7b8ff", "#8ec5ff"]
                 ax.bar(exp_stats["实验名称"], exp_stats["综合得分"], color=colors[:len(exp_stats)])
                 ax.set_ylim(0, 100)
-                ax.set_title("各实验平均综合得分", fontsize=16, fontweight="bold")
-                ax.set_ylabel("平均分")
+                ax.set_title("Average Score by Experiment", fontsize=16, fontweight="bold")
+                ax.set_ylabel("Average score")
                 ax.grid(axis="y", alpha=0.22)
                 plt.xticks(rotation=20)
                 fig.tight_layout()
@@ -1973,6 +1974,6 @@ else:
             )
 
 st.markdown(
-    '<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、自动播放动画、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>',
+    '<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>',
     unsafe_allow_html=True
 )
