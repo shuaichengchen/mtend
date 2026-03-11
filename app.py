@@ -43,6 +43,7 @@ def inject_custom_css():
     st.markdown("""
     <style>
     .stApp {
+        font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "SimHei", sans-serif;
         background:
             radial-gradient(circle at 10% 10%, rgba(122,162,255,0.16), transparent 22%),
             radial-gradient(circle at 90% 15%, rgba(255,166,199,0.14), transparent 22%),
@@ -75,6 +76,7 @@ def inject_custom_css():
     }
 
     .hero-title {
+        font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "SimHei", sans-serif;
         font-size: 2.15rem;
         font-weight: 900;
         color: #1f2a44;
@@ -214,7 +216,30 @@ def inject_custom_css():
     div[data-testid="stVerticalBlock"] div:has(> div > .element-container .stDataFrame) {
         border-radius: 16px;
     }
-    </style>
+
+    h1, h2, h3, h4, h5, h6, p, label, div, span, button, input, textarea {
+        font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "SimHei", sans-serif !important;
+    }
+
+    .login-shell {
+        background: rgba(255,255,255,0.88);
+        border: 1px solid rgba(90,120,200,0.14);
+        border-radius: 30px;
+        padding: 2rem 2rem 1.5rem 2rem;
+        box-shadow: 0 20px 50px rgba(31,42,68,0.09);
+        margin-top: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .entry-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,247,255,0.98));
+        border: 1px solid rgba(90,120,200,0.14);
+        border-radius: 24px;
+        padding: 1.2rem;
+        box-shadow: 0 10px 28px rgba(31,42,68,0.06);
+        min-height: 180px;
+    }
+        </style>
     """, unsafe_allow_html=True)
 
 
@@ -363,6 +388,19 @@ if "frame_map" not in st.session_state:
 
 if "speed_map" not in st.session_state:
     st.session_state.speed_map = {}
+
+if "entry_role" not in st.session_state:
+    st.session_state.entry_role = None
+
+if "student_profile_ready" not in st.session_state:
+    st.session_state.student_profile_ready = False
+
+if "student_profile" not in st.session_state:
+    st.session_state.student_profile = {
+        "学号": "",
+        "班级": "",
+        "姓名": ""
+    }
 
 
 # =========================
@@ -1491,14 +1529,42 @@ def render_experiment_demo(experiment_name, df, params, result):
 
     chart_placeholder = st.empty()
 
+    def render_guiding_questions():
+        st.markdown("### 引导思考")
+        if experiment_name == "平抛运动":
+            st.write("1. 为什么水平方向速度几乎不变？")
+            st.write("2. 为什么竖直方向速度越来越大？")
+            st.write("3. 为什么轨迹不是直线而是抛物线？")
+        elif experiment_name == "自由落体":
+            st.write("1. 为什么下落越到后面越快？")
+            st.write("2. 为什么速度—时间图像接近直线？")
+            st.write("3. 为什么位移与时间平方有关？")
+        elif experiment_name == "欧姆定律":
+            st.write("1. 为什么电压越大，电流越大？")
+            st.write("2. 为什么图像是一条直线？")
+            st.write("3. 电阻改变后图像斜率会怎样变化？")
+        elif experiment_name == "凸透镜成像":
+            st.write("1. 物体靠近焦点时像距为什么会明显变化？")
+            st.write("2. 为什么焦内会形成虚像？")
+            st.write("3. 物距变化时像的正倒和大小如何变化？")
+        elif experiment_name == "牛顿第二定律":
+            st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
+            st.write("2. 图像过原点说明了什么？")
+            st.write("3. 如果质量变大，图像会发生什么变化？")
+        else:
+            st.write("1. 为什么加热时间越长温度越高？")
+            st.write("2. 为什么质量或比热容变大时升温会变慢？")
+            st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+
     def draw_frame(frame_idx):
         row = df.iloc[frame_idx]
         progress = frame_idx / max(total - 1, 1)
 
         with chart_placeholder.container():
-            top_left, top_mid, top_right = st.columns([1.22, 1.22, 0.96])
+            top_left, top_right = st.columns([1.06, 1.06])
 
             with top_left:
+                st.markdown("#### 运动图像 / 关系图像")
                 if experiment_name == "平抛运动":
                     st.pyplot(plot_projectile_trajectory(df, params["h"], frame_idx), use_container_width=True, clear_figure=True)
                 elif experiment_name == "自由落体":
@@ -1512,7 +1578,8 @@ def render_experiment_demo(experiment_name, df, params, result):
                 else:
                     st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
 
-            with top_mid:
+            with top_right:
+                st.markdown("#### 实验装置 / 动态示意")
                 if experiment_name == "平抛运动":
                     st.pyplot(draw_projectile_device(params["h"], row, params["v0"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
                 elif experiment_name == "自由落体":
@@ -1526,34 +1593,11 @@ def render_experiment_demo(experiment_name, df, params, result):
                 else:
                     st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
 
-            with top_right:
+            lower_left, lower_right = st.columns([1.12, 0.88])
+            with lower_left:
                 render_state_panel(experiment_name, row, params, result, progress)
-
-            st.markdown("### 引导思考")
-            if experiment_name == "平抛运动":
-                st.write("1. 为什么水平方向速度几乎不变？")
-                st.write("2. 为什么竖直方向速度越来越大？")
-                st.write("3. 为什么轨迹不是直线而是抛物线？")
-            elif experiment_name == "自由落体":
-                st.write("1. 为什么下落越到后面越快？")
-                st.write("2. 为什么速度—时间图像接近直线？")
-                st.write("3. 为什么位移与时间平方有关？")
-            elif experiment_name == "欧姆定律":
-                st.write("1. 为什么电压越大，电流越大？")
-                st.write("2. 为什么图像是一条直线？")
-                st.write("3. 电阻改变后图像斜率会怎样变化？")
-            elif experiment_name == "凸透镜成像":
-                st.write("1. 物体靠近焦点时像距为什么会明显变化？")
-                st.write("2. 为什么焦内会形成虚像？")
-                st.write("3. 物距变化时像的正倒和大小如何变化？")
-            elif experiment_name == "牛顿第二定律":
-                st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
-                st.write("2. 图像过原点说明了什么？")
-                st.write("3. 如果质量变大，图像会发生什么变化？")
-            else:
-                st.write("1. 为什么加热时间越长温度越高？")
-                st.write("2. 为什么质量或比热容变大时升温会变慢？")
-                st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+            with lower_right:
+                render_guiding_questions()
 
         return row
 
@@ -1621,20 +1665,87 @@ def render_analysis_tab(experiment_name, df, params):
 
 
 # =========================
-# 侧边栏
+# 首页身份选择
 # =========================
-st.sidebar.markdown("## 平台设置")
-role = st.sidebar.radio("选择使用模式", ["学生端", "教师端"])
+st.sidebar.markdown("## 平台导航")
 
+if st.session_state.entry_role is None:
+    st.markdown(
+        """
+        <div class="login-shell">
+            <div class="hero-title">AI赋能中学物理虚拟实验与智能测评平台</div>
+            <div class="hero-subtitle">
+                面向课堂演示、实验探究、过程评价与教师诊断的一体化平台。请先选择身份，再进入对应页面。
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    a, b = st.columns(2)
+    with a:
+        st.markdown("""<div class="entry-card"><h3>学生入口</h3><p>用于实验演示、图像分析、练习测试与学习画像生成。</p></div>""", unsafe_allow_html=True)
+        if st.button("我是学生，进入信息填写", use_container_width=True):
+            st.session_state.entry_role = "学生端"
+            st.rerun()
+    with b:
+        st.markdown("""<div class="entry-card"><h3>教师入口</h3><p>用于教师登录、班级统计、学情诊断与记录查询。</p></div>""", unsafe_allow_html=True)
+        if st.button("我是教师，进入教师端", use_container_width=True):
+            st.session_state.entry_role = "教师端"
+            st.rerun()
+    st.stop()
+
+role = st.session_state.entry_role
+
+with st.sidebar:
+    st.success(f"当前身份：{role}")
+    if st.button("返回身份选择", use_container_width=True):
+        st.session_state.entry_role = None
+        st.session_state.student_profile_ready = False
+        st.rerun()
 
 # =========================
 # 学生端准备数据
 # =========================
 if role == "学生端":
+    if not st.session_state.student_profile_ready:
+        st.markdown(
+            """
+            <div class="login-shell">
+                <div class="hero-title">学生信息确认</div>
+                <div class="hero-subtitle">进入实验前，请先填写真实的姓名、学号和班级信息，方便课堂记录、成绩统计与教师端查询。</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        with st.form("student_profile_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                student_name = st.text_input("姓名")
+                class_name = st.text_input("班级")
+            with col2:
+                student_id = st.text_input("学号")
+                school_info = st.text_input("学校 / 年级（可选）")
+            submitted = st.form_submit_button("确认信息并进入实验平台", use_container_width=True)
+        if submitted:
+            if not student_name.strip() or not class_name.strip() or not student_id.strip():
+                st.error("姓名、学号、班级为必填项，请填写完整后再进入。")
+            else:
+                st.session_state.student_profile = {"学号": student_id.strip(), "班级": class_name.strip(), "姓名": student_name.strip(), "学校": school_info.strip()}
+                st.session_state.student_profile_ready = True
+                st.rerun()
+        st.stop()
+
+    student_id = st.session_state.student_profile.get("学号", "")
+    class_name = st.session_state.student_profile.get("班级", "")
+    student_name = st.session_state.student_profile.get("姓名", "")
+
     st.sidebar.markdown("### 学生信息")
-    student_id = st.sidebar.text_input("学号", value="2026001")
-    class_name = st.sidebar.text_input("班级", value="高一(1)班")
-    student_name = st.sidebar.text_input("姓名", value="学生A")
+    st.sidebar.write(f"姓名：{student_name}")
+    st.sidebar.write(f"学号：{student_id}")
+    st.sidebar.write(f"班级：{class_name}")
+    if st.sidebar.button("重新填写学生信息", use_container_width=True):
+        st.session_state.student_profile_ready = False
+        st.rerun()
 
     st.sidebar.markdown("### 实验模块")
     experiment_name = st.sidebar.selectbox(
@@ -1705,19 +1816,15 @@ if role == "学生端":
         result = simulate_specific_heat(**params)
         df = result["df"]
 
-
-# =========================
-# 学生端页面
-# =========================
-if role == "学生端":
+    # 学生端页面
     st.markdown(
         f"""
         <div class="hero-box">
             <div class="hero-title">AI赋能中学物理虚拟实验与智能测评平台</div>
             <div class="hero-subtitle">
-                当前学生：<b>{student_name}</b>（{class_name}）&nbsp;&nbsp;|&nbsp;&nbsp;
+                当前学生：<b>{student_name}</b>（{class_name}，学号：{student_id}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台支持多实验仿真、丝滑动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析，适合课堂展示、分层练习与课后复盘。
+                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
             </div>
         </div>
         """,
@@ -1742,16 +1849,10 @@ if role == "学生端":
     with tab1:
         section_title(f"{experiment_name}实验演示")
         row = render_experiment_demo(experiment_name, df, params, result)
-
         if show_data:
             st.markdown("### 实验数据表")
             st.dataframe(df, use_container_width=True, height=300)
-            st.download_button(
-                "下载实验数据 CSV",
-                to_csv_bytes(df),
-                file_name=f"{experiment_name}_实验数据.csv",
-                mime="text/csv"
-            )
+            st.download_button("下载实验数据 CSV", to_csv_bytes(df), file_name=f"{experiment_name}_实验数据.csv", mime="text/csv")
 
     with tab2:
         section_title(f"{experiment_name}图像分析")
@@ -1763,60 +1864,31 @@ if role == "学生端":
     with tab3:
         section_title(f"{experiment_name}规律总结与文本分析")
         st.markdown("### 示例规律")
-        st.markdown(
-            f"""
-            <div class="fancy-note">
-            {result["rule"]}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        student_summary = st.text_area(
-            "请写出你对本实验规律的总结",
-            height=170,
-            placeholder="建议写出：实验现象、变量关系、结论以及适用条件……"
-        )
-
+        st.markdown(f"""<div class="fancy-note">{result['rule']}</div>""", unsafe_allow_html=True)
+        student_summary = st.text_area("请写出你对本实验规律的总结", height=170, placeholder="建议写出：实验现象、变量关系、结论以及适用条件……")
         summary_analysis = analyze_summary_text(student_summary, experiment_name)
-
         a1, a2 = st.columns(2)
         with a1:
             st.metric("规律总结文本分", f"{summary_analysis['score']} / 100")
         with a2:
             st.metric("文本质量等级", summary_analysis["level"])
-
         for item in summary_analysis["feedback"]:
             st.write(f"- {item}")
 
     with tab4:
         section_title(f"{experiment_name}实验测试")
         st.markdown("请完成以下 12 道题，系统会从概念理解、图像分析、规律总结三个维度自动评分，题目与选项分布已经重新优化，更适合课堂直接使用。")
-
         st.markdown("""<div class="quiz-tip-box"><b>课堂使用建议：</b>先组织学生观看动画并暂停关键帧，再完成测试。这样可以把“观察—讨论—作答—讲评”串成完整课堂活动。题目已增加到 12 题，并尽量避免正确答案长期集中在同一选项位置。</div>""", unsafe_allow_html=True)
-
         bank = QUESTION_BANK[experiment_name]
         answers = {}
-
         for category in ["concept", "image", "rule"]:
-            title_map = {
-                "concept": "概念理解题",
-                "image": "图像总结分析题",
-                "rule": "规律总结分析题"
-            }
+            title_map = {"concept": "概念理解题", "image": "图像总结分析题", "rule": "规律总结分析题"}
             st.markdown(f"### {title_map[category]}")
             for idx, q in enumerate(bank[category]):
-                answers[f"{category}_{idx}"] = st.radio(
-                    q["question"],
-                    get_shuffled_options(q["question"], q["options"]),
-                    key=f"{experiment_name}_{category}_{idx}"
-                )
-
+                answers[f"{category}_{idx}"] = st.radio(q["question"], get_shuffled_options(q["question"], q["options"]), key=f"{experiment_name}_{category}_{idx}")
         if st.button("提交测试并生成智能评价"):
             concept_score, image_score, rule_quiz_score, feedback = score_quiz(experiment_name, answers)
-
             summary_score = summary_analysis["score"]
-
             process_score = 0
             if defaults_changed:
                 process_score += 25
@@ -1825,106 +1897,51 @@ if role == "学生端":
             if len(student_summary.strip()) >= 20:
                 process_score += 25
             process_score += 25
-
             rule_score = int(0.6 * rule_quiz_score + 0.4 * summary_score)
-
-            total_score = int(
-                concept_score * 0.25 +
-                image_score * 0.25 +
-                rule_score * 0.30 +
-                process_score * 0.20
-            )
-
-            comment, weak_points, advice = generate_comment_and_advice(
-                concept_score, image_score, rule_score, process_score, experiment_name
-            )
-
-            record = {
-                "时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "学号": student_id,
-                "班级": class_name,
-                "姓名": student_name,
-                "实验名称": experiment_name,
-                "概念理解分": concept_score,
-                "图像分析分": image_score,
-                "规律总结分": rule_score,
-                "过程参与分": process_score,
-                "综合得分": total_score,
-                "自动评语": comment
-            }
+            total_score = int(concept_score * 0.25 + image_score * 0.25 + rule_score * 0.30 + process_score * 0.20)
+            comment, weak_points, advice = generate_comment_and_advice(concept_score, image_score, rule_score, process_score, experiment_name)
+            record = {"时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "学号": student_id, "班级": class_name, "姓名": student_name, "实验名称": experiment_name, "概念理解分": concept_score, "图像分析分": image_score, "规律总结分": rule_score, "过程参与分": process_score, "综合得分": total_score, "自动评语": comment}
             save_record(record)
             st.session_state.latest_profile = record
-
             d1, d2, d3, d4, d5 = st.columns(5)
-            with d1:
-                st.metric("概念理解分", f"{concept_score}")
-            with d2:
-                st.metric("图像分析分", f"{image_score}")
-            with d3:
-                st.metric("规律总结分", f"{rule_score}")
-            with d4:
-                st.metric("过程参与分", f"{process_score}")
-            with d5:
-                st.metric("综合得分", f"{total_score}")
-
+            with d1: st.metric("概念理解分", f"{concept_score}")
+            with d2: st.metric("图像分析分", f"{image_score}")
+            with d3: st.metric("规律总结分", f"{rule_score}")
+            with d4: st.metric("过程参与分", f"{process_score}")
+            with d5: st.metric("综合得分", f"{total_score}")
             st.markdown("### 自动评语")
             st.info(comment)
-
             st.markdown("### 薄弱点诊断")
-            for item in weak_points:
-                st.write(f"- {item}")
-
+            for item in weak_points: st.write(f"- {item}")
             st.markdown("### 个性化建议")
-            for item in advice:
-                st.write(f"- {item}")
-
+            for item in advice: st.write(f"- {item}")
             st.markdown("### 错题反馈")
             if feedback:
-                for item in feedback:
-                    st.write(f"- {item}")
+                for item in feedback: st.write(f"- {item}")
             else:
                 st.success("客观题全部答对，说明你对本实验基础内容掌握较好。")
-
             st.success("本次成绩已经保存到本地 CSV 文件，可在教师端查看班级统计结果。")
 
     with tab5:
         section_title("学生能力画像与成长记录")
         profile = st.session_state.latest_profile
         all_records = load_records()
-
         if profile is not None:
             st.markdown(f"### 当前学生：{profile['姓名']} | 最近实验：{profile['实验名称']}")
-            st.pyplot(
-                plot_profile(
-                    profile["概念理解分"],
-                    profile["图像分析分"],
-                    profile["规律总结分"],
-                    profile["过程参与分"]
-                ),
-                use_container_width=True,
-                clear_figure=True
-            )
+            st.pyplot(plot_profile(profile["概念理解分"], profile["图像分析分"], profile["规律总结分"], profile["过程参与分"]), use_container_width=True, clear_figure=True)
             st.write(profile["自动评语"])
         else:
             st.info("请先在“实验测试”页面提交一次测试，系统会生成学生能力画像。")
-
         if not all_records.empty:
             student_records = all_records[all_records["姓名"] == student_name].copy()
             if not student_records.empty:
                 st.markdown("### 个人成长曲线")
                 st.pyplot(plot_growth_curve(student_records), use_container_width=True, clear_figure=True)
-
                 st.markdown("### 个人历史记录")
                 st.dataframe(student_records, use_container_width=True, height=250)
             else:
                 st.warning("当前学生暂无历史记录。")
-
-            st.download_button(
-                "下载全部学生记录 CSV",
-                to_csv_bytes(all_records),
-                file_name="student_records.csv",
-                mime="text/csv"
-            )
+            st.download_button("下载全部学生记录 CSV", to_csv_bytes(all_records), file_name="student_records.csv", mime="text/csv")
 
     with tab6:
         section_title("平台说明")
@@ -1936,46 +1953,30 @@ if role == "学生端":
 4. 学生学习画像、成长曲线与历史记录  
 5. 教师端账号注册登录与教学统计分析  
 
-### 本版重点升级
-- 六个实验都加入了更精美的实验过程展示  
-- 加入播放、重置、倍速控制和滑块查看  
-- 加入轨迹拖尾、动态高亮、拟物装置、速度/位移箭头  
-- 图内文字已尽量改为中文，适合课堂展示使用  
-
-### 后续可继续扩展
-- 增加更多实验模块  
-- 加入数据库和多用户管理  
-- 接入更强的自然语言处理模型  
-- 自动生成实验报告与 PDF 导出  
+### 本次修复与优化
+- 进入页面先选择学生或教师身份  
+- 学生必须先填写姓名、学号、班级后进入实验  
+- 实验演示改为上下两层布局，减少页面大面积留白  
+- 全站字体样式进一步统一，增强中文显示兼容性  
+- 保持原有课堂演示、测试与统计功能不变  
         """)
-
 
 # =========================
 # 教师端
 # =========================
 else:
-    st.markdown(
-        """
+    st.markdown("""
         <div class="hero-box">
             <div class="hero-title">教师端数据分析与教学诊断</div>
-            <div class="hero-subtitle">
-                教师登录后可查看班级整体实验表现、实验分布、平均得分、薄弱维度和个体成长情况，
-                用于课堂教学反思与学情诊断。
-            </div>
+            <div class="hero-subtitle">教师登录后可查看班级整体实验表现、实验分布、平均得分、薄弱维度和个体成长情况，用于课堂教学反思与学情诊断。</div>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+        """, unsafe_allow_html=True)
     if not st.session_state.teacher_logged_in:
         section_title("教师登录 / 注册")
-
         login_tab, register_tab = st.tabs(["教师登录", "教师注册"])
-
         with login_tab:
             login_username = st.text_input("教师账号", key="login_username")
             login_password = st.text_input("教师密码", type="password", key="login_password")
-
             if st.button("登录教师端"):
                 success, msg = login_teacher(login_username, login_password)
                 if success:
@@ -1985,129 +1986,75 @@ else:
                     st.rerun()
                 else:
                     st.error(msg)
-
         with register_tab:
             reg_username = st.text_input("注册账号", key="reg_username")
             reg_password = st.text_input("注册密码", type="password", key="reg_password")
             reg_password2 = st.text_input("确认密码", type="password", key="reg_password2")
-
             if st.button("注册教师账号"):
                 if reg_password != reg_password2:
                     st.error("两次输入的密码不一致")
                 else:
                     success, msg = register_teacher(reg_username, reg_password)
-                    if success:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
-
-        st.markdown(
-            """
-            <div class="soft-tip">
-            当前版本使用本地 JSON 文件保存教师账号，密码以哈希形式存储，适合课程设计与毕业设计演示。
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
+                    st.success(msg) if success else st.error(msg)
+        st.markdown("""<div class="soft-tip">当前版本使用本地 JSON 文件保存教师账号，密码以哈希形式存储，适合课程设计与毕业设计演示。</div>""", unsafe_allow_html=True)
     else:
         col_a, col_b = st.columns([4, 1])
-        with col_a:
-            st.success(f"当前已登录教师账号：{st.session_state.teacher_username}")
+        with col_a: st.success(f"当前已登录教师账号：{st.session_state.teacher_username}")
         with col_b:
             if st.button("退出登录"):
                 st.session_state.teacher_logged_in = False
                 st.session_state.teacher_username = ""
                 st.rerun()
-
         records = load_records()
-
         if records.empty:
             st.warning("当前还没有学生提交记录。请先在学生端完成一次测试。")
         else:
-            class_filter = st.selectbox(
-                "筛选班级",
-                ["全部班级"] + sorted(records["班级"].dropna().astype(str).unique().tolist())
-            )
-            exp_filter = st.selectbox(
-                "筛选实验",
-                ["全部实验"] + sorted(records["实验名称"].dropna().astype(str).unique().tolist())
-            )
-
+            class_filter = st.selectbox("筛选班级", ["全部班级"] + sorted(records["班级"].dropna().astype(str).unique().tolist()))
+            exp_filter = st.selectbox("筛选实验", ["全部实验"] + sorted(records["实验名称"].dropna().astype(str).unique().tolist()))
             filtered = records.copy()
-            if class_filter != "全部班级":
-                filtered = filtered[filtered["班级"] == class_filter]
-            if exp_filter != "全部实验":
-                filtered = filtered[filtered["实验名称"] == exp_filter]
-
+            if class_filter != "全部班级": filtered = filtered[filtered["班级"] == class_filter]
+            if exp_filter != "全部实验": filtered = filtered[filtered["实验名称"] == exp_filter]
             avg_concept = filtered["概念理解分"].mean() if not filtered.empty else 0
             avg_image = filtered["图像分析分"].mean() if not filtered.empty else 0
             avg_rule = filtered["规律总结分"].mean() if not filtered.empty else 0
             avg_process = filtered["过程参与分"].mean() if not filtered.empty else 0
             avg_total = filtered["综合得分"].mean() if not filtered.empty else 0
-
             t1, t2, t3, t4, t5 = st.columns(5)
-            with t1:
-                metric_card("平均概念分", f"{avg_concept:.1f}")
-            with t2:
-                metric_card("平均图像分", f"{avg_image:.1f}")
-            with t3:
-                metric_card("平均规律分", f"{avg_rule:.1f}")
-            with t4:
-                metric_card("平均过程分", f"{avg_process:.1f}")
-            with t5:
-                metric_card("平均综合分", f"{avg_total:.1f}")
-
+            with t1: metric_card("平均概念分", f"{avg_concept:.1f}")
+            with t2: metric_card("平均图像分", f"{avg_image:.1f}")
+            with t3: metric_card("平均规律分", f"{avg_rule:.1f}")
+            with t4: metric_card("平均过程分", f"{avg_process:.1f}")
+            with t5: metric_card("平均综合分", f"{avg_total:.1f}")
             st.markdown("### 班级薄弱点诊断")
-            weak_summary = {
-                "概念理解": avg_concept,
-                "图像分析": avg_image,
-                "规律总结": avg_rule,
-                "过程参与": avg_process
-            }
-            weak_sorted = sorted(weak_summary.items(), key=lambda x: x[1])
-            for name, score in weak_sorted:
+            weak_summary = {"概念理解": avg_concept, "图像分析": avg_image, "规律总结": avg_rule, "过程参与": avg_process}
+            for name, score in sorted(weak_summary.items(), key=lambda x: x[1]):
                 st.write(f"- {name}：{score:.1f} 分")
-
             st.markdown("### 各实验平均综合得分")
             exp_stats = filtered.groupby("实验名称", as_index=False)["综合得分"].mean()
             st.dataframe(exp_stats, use_container_width=True, height=220)
-
             if not exp_stats.empty:
                 fig, ax = plt.subplots(figsize=(8.8, 4.8))
                 colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0", "#a7b8ff", "#8ec5ff"]
                 ax.bar(exp_stats["实验名称"], exp_stats["综合得分"], color=colors[:len(exp_stats)])
                 ax.set_ylim(0, 100)
                 ax.set_title("各实验平均成绩", fontsize=16, fontweight="bold")
-                ax.set_ylabel("Average score")
+                ax.set_ylabel("平均分")
                 ax.grid(axis="y", alpha=0.22)
                 plt.xticks(rotation=20)
                 fig.tight_layout()
                 st.pyplot(fig, use_container_width=True, clear_figure=True)
-
             st.markdown("### 学生个人记录查询")
             names = sorted(filtered["姓名"].dropna().astype(str).unique().tolist())
             if names:
                 selected_student = st.selectbox("选择学生", names)
-
                 stu_df = filtered[filtered["姓名"] == selected_student].copy()
                 if not stu_df.empty:
                     st.dataframe(stu_df, use_container_width=True, height=240)
                     st.pyplot(plot_growth_curve(stu_df), use_container_width=True, clear_figure=True)
                     latest = stu_df.iloc[-1]
                     st.info(f"最近一次评语：{latest['自动评语']}")
-
             st.markdown("### 完整数据表")
             st.dataframe(filtered, use_container_width=True, height=320)
+            st.download_button("下载筛选后的教师统计数据 CSV", to_csv_bytes(filtered), file_name="教师端统计数据.csv", mime="text/csv")
 
-            st.download_button(
-                "下载筛选后的教师统计数据 CSV",
-                to_csv_bytes(filtered),
-                file_name="教师端统计数据.csv",
-                mime="text/csv"
-            )
-
-st.markdown(
-    '<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>', unsafe_allow_html=True)
