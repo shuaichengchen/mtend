@@ -27,7 +27,7 @@ matplotlib.rcParams["axes.unicode_minus"] = False
 matplotlib.rcParams["font.family"] = "sans-serif"
 
 st.set_page_config(
-    page_title="AI赋能中学物理虚拟实验与智能测评平台",
+    page_title="中学物理虚拟实验与智能测评平台",
     page_icon="🧪",
     layout="wide"
 )
@@ -1904,7 +1904,7 @@ if role == "学生端":
             <div class="hero-subtitle">
                 当前学生：<b>{student_name}</b>（{class_name}，学号：{student_id}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
+                平台目前仅用于咸阳师范学院马田毕业设计使用。
             </div>
         </div>
         """,
@@ -2137,4 +2137,4 @@ else:
             st.dataframe(filtered, use_container_width=True, height=320)
             st.download_button("下载筛选后的教师统计数据 CSV", to_csv_bytes(filtered), file_name="教师端统计数据.csv", mime="text/csv")
 
-st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，平台目前仅用于咸阳师范学院马田毕业设计使用。</div>', unsafe_allow_html=True)
