@@ -191,10 +191,22 @@ def inject_custom_css():
         display: none !important;
     }
 
+    /* 修复 Streamlit 顶部/侧边栏 Material Symbols 图标字体缺失时显示成 keyboard_double_* 文本 */
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+
     span.material-symbols-rounded,
     i.material-icons,
     .material-icons-round {
-        font-family: initial !important;
+        font-family: "Material Symbols Rounded", "Material Icons", sans-serif !important;
+        font-variant-ligatures: none !important;
+    }
+
+
+    section[data-testid="stSidebar"] button[kind="header"] {
+        display: none !important;
     }
 
     .interactive-shell {
