@@ -42,17 +42,33 @@ TEACHER_FILE = "teacher_accounts.json"
 def inject_custom_css():
     st.markdown("""
     <style>
+    :root {
+        --bg-dark: #121821;
+        --bg-panel: #1a2330;
+        --bg-panel-2: #202b39;
+        --bg-soft: #243244;
+        --line: rgba(255,255,255,0.08);
+        --line-strong: rgba(255,179,71,0.28);
+        --text-1: #eef3fb;
+        --text-2: #b9c4d6;
+        --text-3: #8a97ad;
+        --accent: #ff9f43;
+        --accent-2: #ffc067;
+        --accent-blue: #4da3ff;
+        --shadow: 0 18px 48px rgba(0,0,0,0.28);
+    }
+
     .stApp {
         font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "SimHei", sans-serif;
         background:
-            radial-gradient(circle at 10% 10%, rgba(122,162,255,0.16), transparent 22%),
-            radial-gradient(circle at 90% 15%, rgba(255,166,199,0.14), transparent 22%),
-            radial-gradient(circle at 20% 90%, rgba(126,220,194,0.14), transparent 20%),
-            linear-gradient(135deg, #f7faff 0%, #eef4ff 45%, #f9fbff 100%);
+            radial-gradient(circle at 10% 10%, rgba(255,159,67,0.10), transparent 20%),
+            radial-gradient(circle at 90% 15%, rgba(77,163,255,0.10), transparent 22%),
+            linear-gradient(135deg, #121821 0%, #171f29 45%, #1d2530 100%);
+        color: var(--text-1);
     }
 
     .block-container {
-        padding-top: 3.2rem;
+        padding-top: 2.6rem;
         padding-bottom: 2rem;
         padding-left: 2rem;
         padding-right: 2rem;
@@ -60,17 +76,21 @@ def inject_custom_css():
     }
 
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
-        border-right: 1px solid rgba(90,120,200,0.12);
+        background: linear-gradient(180deg, #131a23 0%, #1b2430 100%);
+        border-right: 1px solid var(--line);
+    }
+
+    section[data-testid="stSidebar"] * {
+        color: var(--text-1) !important;
     }
 
     .hero-box {
-        background: rgba(255,255,255,0.88);
-        border: 1px solid rgba(90,120,200,0.14);
+        background: linear-gradient(135deg, rgba(26,35,48,0.96), rgba(32,43,57,0.94));
+        border: 1px solid rgba(255,255,255,0.07);
         border-radius: 28px;
         padding: 1.4rem 1.6rem;
-        box-shadow: 0 18px 45px rgba(31,42,68,0.08);
-        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
         margin-top: 1.15rem;
         margin-bottom: 1.1rem;
     }
@@ -79,29 +99,29 @@ def inject_custom_css():
         font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "SimHei", sans-serif;
         font-size: 2.15rem;
         font-weight: 900;
-        color: #1f2a44;
+        color: #ffffff;
         margin-bottom: 0.3rem;
         letter-spacing: 0.3px;
     }
 
     .hero-subtitle {
         font-size: 1rem;
-        color: #5a6887;
+        color: var(--text-2);
         line-height: 1.85;
     }
 
     .metric-card {
-        background: rgba(255,255,255,0.96);
-        border: 1px solid rgba(90,120,200,0.12);
+        background: linear-gradient(160deg, rgba(29,39,53,0.98), rgba(24,33,45,0.98));
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 20px;
         padding: 1rem 1.15rem;
-        box-shadow: 0 10px 28px rgba(31,42,68,0.07);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.22);
         min-height: 108px;
     }
 
     .metric-label {
         font-size: 0.95rem;
-        color: #65759d;
+        color: var(--text-2);
         font-weight: 700;
         margin-bottom: 0.45rem;
     }
@@ -109,32 +129,32 @@ def inject_custom_css():
     .metric-value {
         font-size: 1.72rem;
         font-weight: 800;
-        color: #1f2a44;
+        color: #ffffff;
         line-height: 1.1;
     }
 
     .fancy-note {
-        background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(245,248,255,0.96));
-        border-left: 5px solid #8caeff;
+        background: linear-gradient(135deg, rgba(39,51,67,0.98), rgba(27,36,49,0.98));
+        border-left: 5px solid var(--accent);
         border-radius: 14px;
         padding: 0.95rem 1rem;
-        color: #394a70;
+        color: var(--text-2);
         line-height: 1.8;
         margin: 0.45rem 0 0.8rem 0;
     }
 
     .small-card {
-        background: rgba(255,255,255,0.98);
-        border: 1px solid rgba(90,120,200,0.10);
+        background: linear-gradient(160deg, rgba(29,39,53,0.98), rgba(23,31,42,0.98));
+        border: 1px solid rgba(255,255,255,0.06);
         border-radius: 16px;
         padding: 0.8rem 0.9rem;
-        box-shadow: 0 8px 24px rgba(31,42,68,0.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.20);
         margin-bottom: 0.55rem;
     }
 
     .small-label {
         font-size: 0.85rem;
-        color: #7182aa;
+        color: var(--text-3);
         font-weight: 700;
         margin-bottom: 0.25rem;
     }
@@ -142,41 +162,41 @@ def inject_custom_css():
     .small-value {
         font-size: 1.2rem;
         font-weight: 800;
-        color: #223453;
+        color: #ffffff;
     }
 
     .obs-box {
-        background: linear-gradient(135deg, rgba(255,252,240,0.96), rgba(255,247,225,0.96));
-        border: 1px solid rgba(255,191,86,0.28);
+        background: linear-gradient(135deg, rgba(67,44,18,0.96), rgba(48,33,16,0.98));
+        border: 1px solid rgba(255,175,72,0.30);
         border-radius: 16px;
         padding: 0.95rem 1rem;
-        color: #6b4b00;
+        color: #ffd79b;
         line-height: 1.8;
         margin-top: 0.8rem;
     }
 
     .soft-tip {
-        background: linear-gradient(135deg, rgba(238,245,255,0.96), rgba(247,250,255,0.96));
-        border: 1px solid rgba(90,120,200,0.10);
+        background: linear-gradient(135deg, rgba(24,46,71,0.96), rgba(22,39,61,0.98));
+        border: 1px solid rgba(77,163,255,0.22);
         border-radius: 16px;
         padding: 0.95rem 1rem;
-        color: #34476c;
+        color: #d3e6ff;
         line-height: 1.8;
         margin-top: 0.6rem;
     }
 
     .footer-note {
         text-align: center;
-        color: #6f7fa6;
+        color: var(--text-3);
         font-size: 0.92rem;
         margin-top: 0.8rem;
     }
 
     div[data-testid="stTabs"] {
-        background: rgba(255,255,255,0.42);
+        background: rgba(255,255,255,0.03);
         border-radius: 20px;
         padding: 0.35rem 0.35rem 0.1rem 0.35rem;
-        border: 1px solid rgba(90,120,200,0.08);
+        border: 1px solid rgba(255,255,255,0.06);
         margin-bottom: 0.8rem;
     }
 
@@ -185,32 +205,42 @@ def inject_custom_css():
     }
 
     .quiz-tip-box {
-        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242,247,255,0.98));
-        border: 1px solid rgba(90,120,200,0.12);
+        background: linear-gradient(135deg, rgba(31,42,57,0.98), rgba(23,31,42,0.98));
+        border: 1px solid rgba(255,255,255,0.07);
         border-radius: 18px;
         padding: 1rem 1.1rem;
-        color: #304463;
+        color: var(--text-2);
         line-height: 1.85;
-        box-shadow: 0 10px 28px rgba(31,42,68,0.06);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.22);
         margin-bottom: 0.9rem;
     }
 
     .stButton > button, .stDownloadButton > button {
         border-radius: 14px;
         font-weight: 800;
-        border: 1px solid rgba(90,120,200,0.12);
-        box-shadow: 0 8px 20px rgba(31,42,68,0.08);
+        color: #fff !important;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border: 1px solid rgba(255,186,102,0.35);
+        box-shadow: 0 10px 24px rgba(255,159,67,0.18);
         transition: all 0.18s ease;
     }
 
     .stButton > button:hover, .stDownloadButton > button:hover {
         transform: translateY(-1px);
-        box-shadow: 0 12px 24px rgba(31,42,68,0.12);
+        box-shadow: 0 14px 28px rgba(255,159,67,0.24);
+        filter: brightness(1.03);
     }
 
     div[data-testid="stTabs"] button[role="tab"] {
         border-radius: 12px;
         padding: 0.45rem 0.9rem;
+        color: var(--text-2);
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(255,159,67,0.22), rgba(255,192,103,0.18));
+        color: #fff !important;
+        border: 1px solid rgba(255,186,102,0.20);
     }
 
     div[data-testid="stVerticalBlock"] div:has(> div > .element-container .stDataFrame) {
@@ -222,24 +252,60 @@ def inject_custom_css():
     }
 
     .login-shell {
-        background: rgba(255,255,255,0.88);
-        border: 1px solid rgba(90,120,200,0.14);
+        background: linear-gradient(135deg, rgba(26,35,48,0.96), rgba(31,42,57,0.96));
+        border: 1px solid rgba(255,255,255,0.07);
         border-radius: 30px;
         padding: 2rem 2rem 1.5rem 2rem;
-        box-shadow: 0 20px 50px rgba(31,42,68,0.09);
+        box-shadow: var(--shadow);
         margin-top: 1.2rem;
         margin-bottom: 1rem;
     }
 
     .entry-card {
-        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(243,247,255,0.98));
-        border: 1px solid rgba(90,120,200,0.14);
+        background: linear-gradient(135deg, rgba(31,42,57,0.98), rgba(25,34,46,0.98));
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 24px;
         padding: 1.2rem;
-        box-shadow: 0 10px 28px rgba(31,42,68,0.06);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.20);
         min-height: 180px;
     }
-        </style>
+
+    div[data-testid="stSelectbox"] > div,
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stTextArea"] textarea,
+    div[data-baseweb="select"] > div,
+    .stMultiSelect [data-baseweb="select"] > div {
+        background: rgba(24,33,45,0.95) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 14px !important;
+    }
+
+    .stSlider [data-baseweb="slider"] div[role="slider"] {
+        background: var(--accent) !important;
+        box-shadow: 0 0 0 4px rgba(255,159,67,0.18);
+    }
+
+    .stSlider [data-baseweb="slider"] > div > div {
+        background: rgba(255,255,255,0.12) !important;
+    }
+
+    div[data-testid="stMarkdownContainer"], .stMarkdown {
+        color: var(--text-1);
+    }
+
+    [data-testid="stDataFrame"],
+    [data-testid="stExpander"],
+    [data-testid="stForm"] {
+        background: rgba(24,33,45,0.56);
+        border-radius: 18px;
+    }
+
+    div[data-testid="stAlert"] {
+        border-radius: 16px;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
 
@@ -747,7 +813,7 @@ def plot_projectile_trajectory(df, h, idx):
 
     if idx < len(df) - 1:
         ax.scatter(x[-1], 0, s=90, color="#ffb56b", edgecolor="white", linewidth=1.2, zorder=4)
-        ax.text(x[-1], 0.35, "落地点", ha="center", fontsize=10, color="#9b5a00")
+        ax.text(x[-1], 0.35, "Landing", ha="center", fontsize=10, color="#9b5a00")
 
     vx = df["水平速度vx(m/s)"].iloc[idx]
     vy = df["竖直速度vy(m/s)"].iloc[idx]
@@ -757,9 +823,9 @@ def plot_projectile_trajectory(df, h, idx):
     ax.arrow(x[idx], y[idx], 0, vy * scale, width=0.03, head_width=0.18, head_length=0.25,
              color="#e66767", length_includes_head=True, zorder=6)
 
-    ax.set_title("平抛运动轨迹", fontsize=16, fontweight="bold")
-    ax.set_xlabel("水平位移 x / m")
-    ax.set_ylabel("竖直高度 y / m")
+    ax.set_title("Projectile Path", fontsize=16, fontweight="bold")
+    ax.set_xlabel("x / m")
+    ax.set_ylabel("y / m")
     ax.axhline(0, linestyle="--", alpha=0.35, color="#5776a2")
     fig.tight_layout()
     return fig
@@ -791,7 +857,7 @@ def draw_projectile_device(h, row, v0, idx, total):
 
     ax.add_patch(FancyArrow(2.0, h - 0.16, 1.0, 0, width=0.04, head_width=0.18, head_length=0.22,
                             color="#3d78c5", zorder=5))
-    ax.text(2.25, h + 0.28, f"初速度 v₀={v0:.1f} m/s", fontsize=11, color="#274f85")
+    ax.text(2.25, h + 0.28, f"v0={v0:.1f} m/s", fontsize=11, color="#274f85")
 
     vy_show = row["竖直速度vy(m/s)"]
     ax.add_patch(FancyArrow(ball_x, ball_y, 0.8, 0, width=0.03, head_width=0.15, head_length=0.18,
@@ -801,16 +867,16 @@ def draw_projectile_device(h, row, v0, idx, total):
 
     ax.annotate("", xy=(-0.12, h), xytext=(-0.12, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text(-0.35, h / 2, f"高度 h={h:.1f} m", rotation=90, va="center", fontsize=10)
+    ax.text(-0.35, h / 2, f"h={h:.1f} m", rotation=90, va="center", fontsize=10)
 
     ax.annotate("", xy=(ball_x, -0.18), xytext=(2.1, -0.18),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text((ball_x + 2.1) / 2, -0.48, f"水平位移 x={row['水平位移x(m)']:.2f} m", ha="center", fontsize=10)
+    ax.text((ball_x + 2.1) / 2, -0.48, f"x={row['水平位移x(m)']:.2f} m", ha="center", fontsize=10)
 
-    ax.text(ball_x + 0.22, ball_y + 0.22, "小球", fontsize=10)
-    ax.text(xmax - 2.2, ymax - 0.55, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(ball_x + 0.22, ball_y + 0.22, "Ball", fontsize=10)
+    ax.text(xmax - 2.2, ymax - 0.55, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("平抛装置示意", fontsize=15, fontweight="bold")
+    ax.set_title("Projectile Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -819,13 +885,13 @@ def draw_projectile_device(h, row, v0, idx, total):
 def plot_projectile_velocity(df, idx):
     fig, ax = plt.subplots(figsize=(8.8, 5))
     t = df["时间(s)"]
-    ax.plot(t, df["水平速度vx(m/s)"], label="水平速度 vx-t", color="#4d7ad1", linewidth=2.3)
-    ax.plot(t, df["竖直速度vy(m/s)"], label="竖直速度 vy-t", color="#e46b6b", linewidth=2.3)
-    ax.plot(t, df["合速度v(m/s)"], label="合速度 v-t", color="#ff9f3a", linewidth=2.3)
+    ax.plot(t, df["水平速度vx(m/s)"], label="vx-t", color="#4d7ad1", linewidth=2.3)
+    ax.plot(t, df["竖直速度vy(m/s)"], label="vy-t", color="#e46b6b", linewidth=2.3)
+    ax.plot(t, df["合速度v(m/s)"], label="v-t", color="#ff9f3a", linewidth=2.3)
     ax.scatter(t.iloc[idx], df["合速度v(m/s)"].iloc[idx], s=95, color="#ff9f3a", edgecolor="white", zorder=5)
-    ax.set_title("速度—时间图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("速度 / (m·s⁻¹)")
+    ax.set_title("v-t Graph", fontsize=16, fontweight="bold")
+    ax.set_xlabel("t / s")
+    ax.set_ylabel("v / (m/s)")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -838,17 +904,17 @@ def plot_freefall_main(df, idx):
     y = df["高度y(m)"]
     v = df["速度v(m/s)"]
 
-    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="高度 y-t")
+    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="y-t")
     ax.scatter(t[:idx+1], y[:idx+1], color="#9eceff", s=20, alpha=0.5)
     ax.scatter(t.iloc[idx], y.iloc[idx], color="#ff9a2e", s=115, edgecolor="white", zorder=5)
 
     ax2 = ax.twinx()
-    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="速度 v-t")
+    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="v-t")
     ax2.scatter(t.iloc[idx], v.iloc[idx], color="#ef6d6d", s=85, edgecolor="white", zorder=5)
 
-    ax.set_title("自由落体：高度与速度", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("竖直高度 y / m")
+    ax.set_title("Free Fall: y & v", fontsize=16, fontweight="bold")
+    ax.set_xlabel("t / s")
+    ax.set_ylabel("y / m")
     ax2.set_ylabel("速度 v / (m·s⁻¹)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -875,14 +941,14 @@ def draw_freefall_device(h, row, idx, total):
     arrow_len = min(1.5, row["速度v(m/s)"] * 0.08 + 0.25)
     ax.add_patch(FancyArrow(1.0, ball_y + 0.65, 0, -arrow_len, width=0.05,
                             head_width=0.18, head_length=0.18, color="#4e7bd1"))
-    ax.text(1.18, ball_y + 0.2, "速度", fontsize=10)
+    ax.text(1.18, ball_y + 0.2, "v", fontsize=10)
 
     ax.annotate("", xy=(-0.7, h), xytext=(-0.7, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text(-1.0, h / 2, f"高度 h={h:.1f} m", rotation=90, va="center", fontsize=10)
-    ax.text(1.7, h + 0.25, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(-1.0, h / 2, f"h={h:.1f} m", rotation=90, va="center", fontsize=10)
+    ax.text(1.7, h + 0.25, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("自由落体装置示意", fontsize=15, fontweight="bold")
+    ax.set_title("Free Fall Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -895,9 +961,9 @@ def plot_ohm(df, idx):
     ax.plot(u, i, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(u[:idx+1], i[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(u.iloc[idx], i.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("欧姆定律：I-U 图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("电压 U / V")
-    ax.set_ylabel("电流 I / A")
+    ax.set_title("Ohm's Law: I-U", fontsize=16, fontweight="bold")
+    ax.set_xlabel("U / V")
+    ax.set_ylabel("I / A")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -929,7 +995,7 @@ def draw_ohm_device(row, resistance, idx, total):
     ax.plot([4.1, 3.2], [3, 3], linewidth=2.1, color="#2f4058")
 
     ax.add_patch(Rectangle((5.0, 1.55), 0.65, 0.95, fill=False, linewidth=2.2, edgecolor="#d56e6e"))
-    ax.text(5.08, 2.65, "Power", fontsize=10, color="#8d3f3f")
+    ax.text(5.08, 2.65, "PS", fontsize=10, color="#8d3f3f")
 
     dots = np.linspace(0.75, 5.8, 8)
     for i, _ in enumerate(dots):
@@ -941,9 +1007,9 @@ def draw_ohm_device(row, resistance, idx, total):
     ax.text(2.72, 1.18, f"R={resistance:.1f}Ω", fontsize=11, color="#475d84")
     ax.text(0.78, 2.58, f"I={row['电流I(A)']:.2f}A", fontsize=11, color="#475d84")
     ax.text(2.82, 3.37, f"U={row['电压U(V)']:.2f}V", fontsize=11, color="#475d84")
-    ax.text(5.7, 3.55, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(5.7, 3.55, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("电路装置示意", fontsize=15, fontweight="bold")
+    ax.set_title("Circuit Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -956,9 +1022,9 @@ def plot_lens(df, f, idx):
     ax.plot(u, v, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.axvline(f, linestyle="--", alpha=0.55, color="#e58a4f", label="Focus f")
     ax.scatter(u.iloc[idx], v.iloc[idx], s=125, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("凸透镜成像：物距与像距", fontsize=16, fontweight="bold")
-    ax.set_xlabel("物距 u / cm")
-    ax.set_ylabel("像距 v / cm")
+    ax.set_title("Lens: u-v", fontsize=16, fontweight="bold")
+    ax.set_xlabel("u / cm")
+    ax.set_ylabel("v / cm")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -1013,9 +1079,9 @@ def draw_lens_device(f, row, idx, total):
     ax.text(-9.3, 2.35, f"u={row['物距u(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(3.8, 2.35, f"v={row['像距v(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(0.7, 2.35, f"{image_type} / {image_size}", fontsize=10, color="#475d84")
-    ax.text(7.0, 2.75, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(7.0, 2.75, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("凸透镜成像装置", fontsize=15, fontweight="bold")
+    ax.set_title("Lens Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1028,8 +1094,8 @@ def plot_newton(df, idx):
     ax.plot(f, a, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(f[:idx+1], a[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(f.iloc[idx], a.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("牛顿第二定律：F-a 图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("合外力 F / N")
+    ax.set_title("Newton II: F-a", fontsize=16, fontweight="bold")
+    ax.set_xlabel("F / N")
     ax.set_ylabel("Acceleration a / (m/s²)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -1057,9 +1123,9 @@ def draw_newton_device(row, mass, idx, total):
     ax.text(cart_x + 2.2, 1.58, f"F={row['力F(N)']:.2f}N", fontsize=11, color="#8a4141")
     ax.text(cart_x + 0.2, 2.02, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(cart_x + 0.2, 2.34, f"a={row['加速度a(m/s²)']:.2f}m/s²", fontsize=11, color="#475d84")
-    ax.text(8.2, 2.8, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(8.2, 2.8, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("牛顿第二定律装置", fontsize=15, fontweight="bold")
+    ax.set_title("Newton II Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1072,9 +1138,9 @@ def plot_heat(df, idx):
     ax.plot(t, temp, color="#ef6d6d", linewidth=2.6)
     ax.fill_between(t[:idx+1], temp[:idx+1], color="#ffc0b2", alpha=0.15)
     ax.scatter(t.iloc[idx], temp.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("温度—时间图像", fontsize=16, fontweight="bold")
-    ax.set_xlabel("时间 t / s")
-    ax.set_ylabel("温度 T / ℃")
+    ax.set_title("T-t Graph", fontsize=16, fontweight="bold")
+    ax.set_xlabel("t / s")
+    ax.set_ylabel("T / C")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1107,9 +1173,9 @@ def draw_heat_device(row, power, mass, idx, total):
     ax.text(0.8, 2.5, f"P={power:.0f}W", fontsize=11, color="#475d84")
     ax.text(0.8, 2.05, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(0.8, 1.6, f"T={row['温度T(℃)']:.2f}℃", fontsize=11, color="#475d84")
-    ax.text(6.95, 2.8, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(6.95, 2.8, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("加热装置示意", fontsize=15, fontweight="bold")
+    ax.set_title("Heating Device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1173,7 +1239,7 @@ QUESTION_BANK = {
         "image": [
             {"question": "4. 自由落体的 v-t 图像通常是？", "options": ["抛物线", "过原点的直线", "水平直线", "圆弧"], "answer": "过原点的直线", "analysis": "速度与时间成正比。"},
             {"question": "5. 自由落体的 s-t 图像更接近？", "options": ["直线", "圆", "抛物线", "水平线"], "answer": "抛物线", "analysis": "位移与时间平方成正比。"},
-            {"question": "6. 若图像中斜率越来越大，说明物体的什么量在增大？", "options": ["加速度方向", "高度", "路程单位", "速度"], "answer": "速度", "analysis": "位移—时间图像斜率反映速度大小。"}
+            {"question": "6. 若图像中斜率越来越大，说明物体的什么量在增大？", "options": ["加速度方向", "高度", "路程单位", "v"], "answer": "v", "analysis": "位移—时间图像斜率反映速度大小。"}
         ],
         "rule": [
             {"question": "7. 地面附近自由落体加速度通常近似为？", "options": ["1 m/s²", "98 m/s²", "9.8 m/s²", "0.98 m/s²"], "answer": "9.8 m/s²", "analysis": "常用近似值。"},
@@ -1257,7 +1323,7 @@ QUESTION_BANK = {
 # =========================
 SUMMARY_KEYWORDS = {
     "平抛运动": ["匀速", "自由落体", "抛物线", "高度", "射程", "水平", "竖直"],
-    "自由落体": ["重力", "匀加速", "速度", "位移", "时间平方", "加速度"],
+    "自由落体": ["重力", "匀加速", "v", "位移", "时间平方", "加速度"],
     "欧姆定律": ["电压", "电流", "电阻", "正比", "I=U/R", "图像", "直线"],
     "凸透镜成像": ["焦点", "实像", "虚像", "物距", "像距", "放大", "缩小"],
     "牛顿第二定律": ["力", "加速度", "质量", "F=ma", "正比", "反比"],
@@ -1375,7 +1441,7 @@ def extend_question_bank():
         },
         "自由落体": {
             "concept": {"question": "4. 自由落体中“自由”强调的是？", "options": ["没有受到任何力", "只受重力作用", "速度不变", "下落方向任意"], "answer": "只受重力作用", "analysis": "理想自由落体忽略空气阻力，仅受重力。"},
-            "image": {"question": "8. 在 v-t 图像中，直线斜率表示的物理量是？", "options": ["位移", "速度", "加速度", "路程"], "answer": "加速度", "analysis": "速度—时间图像的斜率表示加速度。"},
+            "image": {"question": "8. 在 v-t 图像中，直线斜率表示的物理量是？", "options": ["位移", "v", "加速度", "路程"], "answer": "加速度", "analysis": "速度—时间图像的斜率表示加速度。"},
             "rule": {"question": "12. 一个物体自由下落 1 s，下落位移最接近？", "options": ["4.9 m", "9.8 m", "14.7 m", "19.6 m"], "answer": "4.9 m", "analysis": "s=1/2gt²≈4.9m。"}
         },
         "欧姆定律": {
@@ -1389,7 +1455,7 @@ def extend_question_bank():
             "rule": {"question": "12. 放大镜利用的成像原理通常是？", "options": ["倒立缩小实像", "正立放大虚像", "倒立等大实像", "倒立放大实像"], "answer": "正立放大虚像", "analysis": "放大镜工作时，物体一般位于焦点内。"}
         },
         "牛顿第二定律": {
-            "concept": {"question": "4. 牛顿第二定律研究的是合外力、质量和什么之间的关系？", "options": ["速度", "位移", "加速度", "时间"], "answer": "加速度", "analysis": "牛顿第二定律说明加速度由合外力和质量共同决定。"},
+            "concept": {"question": "4. 牛顿第二定律研究的是合外力、质量和什么之间的关系？", "options": ["v", "位移", "加速度", "时间"], "answer": "加速度", "analysis": "牛顿第二定律说明加速度由合外力和质量共同决定。"},
             "image": {"question": "8. 在质量一定时，a-F 图像是一条直线，这说明？", "options": ["a 与 F 成正比", "a 与 F 成反比", "a 与 F 无关", "F 保持不变"], "answer": "a 与 F 成正比", "analysis": "直线过原点表明比例关系。"},
             "rule": {"question": "12. 若 F=10N，a=5m/s²，则物体质量 m 为？", "options": ["0.5kg", "2kg", "5kg", "50kg"], "answer": "2kg", "analysis": "由 F=ma 得 m=F/a=2kg。"}
         },
@@ -1523,6 +1589,18 @@ def render_state_panel(exp_name, row, params, result, progress):
     )
 
 
+def render_plot_notation_help(experiment_name):
+    notes = {
+        "平抛运动": "图中符号说明：x 表示水平位移，y 表示竖直高度，vx/ vy 分别表示水平与竖直速度，v 表示合速度，h 表示初始高度，v0 表示初速度。",
+        "自由落体": "图中符号说明：t 表示时间，y 表示高度，v 表示速度，h 表示初始高度。",
+        "欧姆定律": "图中符号说明：U 表示电压，I 表示电流，R 表示电阻，PS 表示电源。",
+        "凸透镜成像": "图中符号说明：u 表示物距，v 表示像距，F 表示焦点。",
+        "牛顿第二定律": "图中符号说明：F 表示合外力，a 表示加速度，m 表示质量。",
+        "比热容": "图中符号说明：T 表示温度，t 表示时间，P 表示加热功率，m 表示质量。"
+    }
+    st.caption(notes.get(experiment_name, "图中使用英文字母或物理符号标注，便于兼容不同设备字体。"))
+
+
 def render_experiment_demo(experiment_name, df, params, result):
     total = len(df)
     idx, play_clicked, speed = get_manual_index(df, experiment_name)
@@ -1577,6 +1655,7 @@ def render_experiment_demo(experiment_name, df, params, result):
                     st.pyplot(plot_newton(df, frame_idx), use_container_width=True, clear_figure=True)
                 else:
                     st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
+                render_plot_notation_help(experiment_name)
 
             with top_right:
                 st.markdown("#### 实验装置 / 动态示意")
@@ -1592,6 +1671,7 @@ def render_experiment_demo(experiment_name, df, params, result):
                     st.pyplot(draw_newton_device(row, params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
                 else:
                     st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                render_plot_notation_help(experiment_name)
 
             lower_left, lower_right = st.columns([1.12, 0.88])
             with lower_left:
@@ -1628,7 +1708,7 @@ def render_analysis_tab(experiment_name, df, params):
             ax.plot(df["时间(s)"], df["水平位移x(m)"], label="x-t", color="#3f7fd0", linewidth=2.3)
             ax.plot(df["时间(s)"], df["竖直高度y(m)"], label="y-t", color="#ef6d6d", linewidth=2.3)
             ax.set_title("位移—时间图像", fontsize=16, fontweight="bold")
-            ax.set_xlabel("时间 t / s")
+            ax.set_xlabel("t / s")
             ax.grid(True, alpha=0.22)
             ax.legend()
             fig.tight_layout()
@@ -1638,9 +1718,9 @@ def render_analysis_tab(experiment_name, df, params):
     elif experiment_name == "自由落体":
         fig, ax = plt.subplots(figsize=(8.8, 5))
         ax.plot(df["时间(s)"], df["下落位移s(m)"], label="位移 s-t", color="#3f7fd0", linewidth=2.4)
-        ax.plot(df["时间(s)"], df["速度v(m/s)"], label="合速度 v-t", color="#ef6d6d", linewidth=2.4)
+        ax.plot(df["时间(s)"], df["速度v(m/s)"], label="v-t", color="#ef6d6d", linewidth=2.4)
         ax.set_title("自由落体图像", fontsize=16, fontweight="bold")
-        ax.set_xlabel("时间 t / s")
+        ax.set_xlabel("t / s")
         ax.grid(True, alpha=0.22)
         ax.legend()
         fig.tight_layout()
