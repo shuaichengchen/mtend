@@ -51,11 +51,11 @@ def inject_custom_css():
     }
 
     .block-container {
-        padding-top: 1.1rem;
+        padding-top: 3.2rem;
         padding-bottom: 2rem;
         padding-left: 2rem;
         padding-right: 2rem;
-        max-width: 1480px;
+        max-width: 1520px;
     }
 
     section[data-testid="stSidebar"] {
@@ -70,7 +70,8 @@ def inject_custom_css():
         padding: 1.4rem 1.6rem;
         box-shadow: 0 18px 45px rgba(31,42,68,0.08);
         backdrop-filter: blur(10px);
-        margin-bottom: 1rem;
+        margin-top: 1.15rem;
+        margin-bottom: 1.1rem;
     }
 
     .hero-title {
@@ -169,9 +170,49 @@ def inject_custom_css():
         margin-top: 0.8rem;
     }
 
+    div[data-testid="stTabs"] {
+        background: rgba(255,255,255,0.42);
+        border-radius: 20px;
+        padding: 0.35rem 0.35rem 0.1rem 0.35rem;
+        border: 1px solid rgba(90,120,200,0.08);
+        margin-bottom: 0.8rem;
+    }
+
+    .element-container:has(.stDataFrame), .element-container:has(canvas), .element-container:has(svg) {
+        border-radius: 18px;
+    }
+
+    .quiz-tip-box {
+        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242,247,255,0.98));
+        border: 1px solid rgba(90,120,200,0.12);
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+        color: #304463;
+        line-height: 1.85;
+        box-shadow: 0 10px 28px rgba(31,42,68,0.06);
+        margin-bottom: 0.9rem;
+    }
+
     .stButton > button, .stDownloadButton > button {
+        border-radius: 14px;
+        font-weight: 800;
+        border: 1px solid rgba(90,120,200,0.12);
+        box-shadow: 0 8px 20px rgba(31,42,68,0.08);
+        transition: all 0.18s ease;
+    }
+
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(31,42,68,0.12);
+    }
+
+    div[data-testid="stTabs"] button[role="tab"] {
         border-radius: 12px;
-        font-weight: 700;
+        padding: 0.45rem 0.9rem;
+    }
+
+    div[data-testid="stVerticalBlock"] div:has(> div > .element-container .stDataFrame) {
+        border-radius: 16px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -404,7 +445,7 @@ def get_manual_index(df, exp_name, title="实验过程"):
     if frame_key not in st.session_state:
         st.session_state[frame_key] = 0
     if speed_key not in st.session_state:
-        st.session_state[speed_key] = 8
+        st.session_state[speed_key] = 4
 
     c1, c2, c3, c4 = st.columns([1, 1, 1.2, 3])
 
@@ -418,11 +459,12 @@ def get_manual_index(df, exp_name, title="实验过程"):
             st.session_state[frame_key] = 0
 
     with c3:
-        speed_options = [1, 2, 4, 8, 12, 16]
+        speed_map = {1: "慢速", 2: "标准", 4: "流畅", 8: "极速"}
         speed = st.selectbox(
-            "倍速",
-            speed_options,
-            index=speed_options.index(st.session_state[speed_key]),
+            "播放速度",
+            list(speed_map.keys()),
+            index=list(speed_map.keys()).index(st.session_state[speed_key]),
+            format_func=lambda x: speed_map[x],
             key=f"speed_select_{frame_key}"
         )
         st.session_state[speed_key] = speed
@@ -443,9 +485,23 @@ def get_manual_index(df, exp_name, title="实验过程"):
     return st.session_state[frame_key], play_clicked, st.session_state[speed_key]
 
 
+def build_playback_frames(total, current_idx, speed):
+    if total <= 1:
+        return [0]
+    frame_budget_map = {1: 26, 2: 20, 4: 15, 8: 12}
+    budget = frame_budget_map.get(speed, 15)
+    end_idx = max(total - 1, current_idx)
+    frames = np.linspace(current_idx, end_idx, num=min(budget, max(end_idx - current_idx + 1, 2)), dtype=int).tolist()
+    frames = sorted(set(frames))
+    if frames[-1] != total - 1:
+        frames.append(total - 1)
+    return frames
+
+
 # =========================
 # 实验计算
 # =========================
+@st.cache_data(show_spinner=False)
 def simulate_projectile(v0, h, g, dt, use_drag=False, k=0.15):
     if not use_drag:
         total_time = math.sqrt(2 * h / g)
@@ -505,6 +561,7 @@ def simulate_projectile(v0, h, g, dt, use_drag=False, k=0.15):
     }
 
 
+@st.cache_data(show_spinner=False)
 def simulate_freefall(h, g, dt):
     total_time = math.sqrt(2 * h / g)
     t = np.arange(0, total_time + dt, dt)
@@ -530,6 +587,7 @@ def simulate_freefall(h, g, dt):
     }
 
 
+@st.cache_data(show_spinner=False)
 def simulate_ohm(voltage_max, resistance, points=20):
     u = np.linspace(0, voltage_max, points)
     i = u / resistance
@@ -552,6 +610,7 @@ def simulate_ohm(voltage_max, resistance, points=20):
     }
 
 
+@st.cache_data(show_spinner=False)
 def simulate_lens(f, u_min, u_max, step):
     u_values = np.arange(u_min, u_max + step, step)
     rows = []
@@ -588,6 +647,7 @@ def simulate_lens(f, u_min, u_max, step):
     }
 
 
+@st.cache_data(show_spinner=False)
 def simulate_newton2(mass, f_min, f_max, points):
     force = np.linspace(f_min, f_max, points)
     acc = force / mass
@@ -608,6 +668,7 @@ def simulate_newton2(mass, f_min, f_max, points):
     }
 
 
+@st.cache_data(show_spinner=False)
 def simulate_specific_heat(mass, c, power, total_time, dt):
     t = np.arange(0, total_time + dt, dt)
     temp_rise = power * t / (mass * c)
@@ -632,7 +693,7 @@ def simulate_specific_heat(mass, c, power, total_time, dt):
 
 # =========================
 # 图像与装置演示
-# 图中统一使用英文，避免云端中文字体缺失
+# 课堂版：图中尽量使用中文，提升直接教学使用体验
 # =========================
 def plot_projectile_trajectory(df, h, idx):
     fig, ax = plt.subplots(figsize=(8.8, 5.2))
@@ -648,7 +709,7 @@ def plot_projectile_trajectory(df, h, idx):
 
     if idx < len(df) - 1:
         ax.scatter(x[-1], 0, s=90, color="#ffb56b", edgecolor="white", linewidth=1.2, zorder=4)
-        ax.text(x[-1], 0.35, "Landing", ha="center", fontsize=10, color="#9b5a00")
+        ax.text(x[-1], 0.35, "落地点", ha="center", fontsize=10, color="#9b5a00")
 
     vx = df["水平速度vx(m/s)"].iloc[idx]
     vy = df["竖直速度vy(m/s)"].iloc[idx]
@@ -658,9 +719,9 @@ def plot_projectile_trajectory(df, h, idx):
     ax.arrow(x[idx], y[idx], 0, vy * scale, width=0.03, head_width=0.18, head_length=0.25,
              color="#e66767", length_includes_head=True, zorder=6)
 
-    ax.set_title("Projectile Trajectory", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Horizontal displacement x / m")
-    ax.set_ylabel("Height y / m")
+    ax.set_title("平抛运动轨迹", fontsize=16, fontweight="bold")
+    ax.set_xlabel("水平位移 x / m")
+    ax.set_ylabel("竖直高度 y / m")
     ax.axhline(0, linestyle="--", alpha=0.35, color="#5776a2")
     fig.tight_layout()
     return fig
@@ -692,7 +753,7 @@ def draw_projectile_device(h, row, v0, idx, total):
 
     ax.add_patch(FancyArrow(2.0, h - 0.16, 1.0, 0, width=0.04, head_width=0.18, head_length=0.22,
                             color="#3d78c5", zorder=5))
-    ax.text(2.25, h + 0.28, f"v0={v0:.1f} m/s", fontsize=11, color="#274f85")
+    ax.text(2.25, h + 0.28, f"初速度 v₀={v0:.1f} m/s", fontsize=11, color="#274f85")
 
     vy_show = row["竖直速度vy(m/s)"]
     ax.add_patch(FancyArrow(ball_x, ball_y, 0.8, 0, width=0.03, head_width=0.15, head_length=0.18,
@@ -702,16 +763,16 @@ def draw_projectile_device(h, row, v0, idx, total):
 
     ax.annotate("", xy=(-0.12, h), xytext=(-0.12, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text(-0.35, h / 2, f"h={h:.1f}m", rotation=90, va="center", fontsize=10)
+    ax.text(-0.35, h / 2, f"高度 h={h:.1f} m", rotation=90, va="center", fontsize=10)
 
     ax.annotate("", xy=(ball_x, -0.18), xytext=(2.1, -0.18),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text((ball_x + 2.1) / 2, -0.48, f"x={row['水平位移x(m)']:.2f}m", ha="center", fontsize=10)
+    ax.text((ball_x + 2.1) / 2, -0.48, f"水平位移 x={row['水平位移x(m)']:.2f} m", ha="center", fontsize=10)
 
-    ax.text(ball_x + 0.22, ball_y + 0.22, "Ball", fontsize=10)
-    ax.text(xmax - 2.2, ymax - 0.55, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(ball_x + 0.22, ball_y + 0.22, "小球", fontsize=10)
+    ax.text(xmax - 2.2, ymax - 0.55, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Projectile Device", fontsize=15, fontweight="bold")
+    ax.set_title("平抛装置示意", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -720,13 +781,13 @@ def draw_projectile_device(h, row, v0, idx, total):
 def plot_projectile_velocity(df, idx):
     fig, ax = plt.subplots(figsize=(8.8, 5))
     t = df["时间(s)"]
-    ax.plot(t, df["水平速度vx(m/s)"], label="vx-t", color="#4d7ad1", linewidth=2.3)
-    ax.plot(t, df["竖直速度vy(m/s)"], label="vy-t", color="#e46b6b", linewidth=2.3)
-    ax.plot(t, df["合速度v(m/s)"], label="v-t", color="#ff9f3a", linewidth=2.3)
+    ax.plot(t, df["水平速度vx(m/s)"], label="水平速度 vx-t", color="#4d7ad1", linewidth=2.3)
+    ax.plot(t, df["竖直速度vy(m/s)"], label="竖直速度 vy-t", color="#e46b6b", linewidth=2.3)
+    ax.plot(t, df["合速度v(m/s)"], label="合速度 v-t", color="#ff9f3a", linewidth=2.3)
     ax.scatter(t.iloc[idx], df["合速度v(m/s)"].iloc[idx], s=95, color="#ff9f3a", edgecolor="white", zorder=5)
-    ax.set_title("Velocity - Time", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Time t / s")
-    ax.set_ylabel("Velocity / (m·s⁻¹)")
+    ax.set_title("速度—时间图像", fontsize=16, fontweight="bold")
+    ax.set_xlabel("时间 t / s")
+    ax.set_ylabel("速度 / (m·s⁻¹)")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -739,18 +800,18 @@ def plot_freefall_main(df, idx):
     y = df["高度y(m)"]
     v = df["速度v(m/s)"]
 
-    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="Height y-t")
+    ax.plot(t, y, color="#3f7fd0", linewidth=2.5, label="高度 y-t")
     ax.scatter(t[:idx+1], y[:idx+1], color="#9eceff", s=20, alpha=0.5)
     ax.scatter(t.iloc[idx], y.iloc[idx], color="#ff9a2e", s=115, edgecolor="white", zorder=5)
 
     ax2 = ax.twinx()
-    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="Velocity v-t")
+    ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="速度 v-t")
     ax2.scatter(t.iloc[idx], v.iloc[idx], color="#ef6d6d", s=85, edgecolor="white", zorder=5)
 
-    ax.set_title("Free Fall: Height & Velocity", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Time t / s")
-    ax.set_ylabel("Height y / m")
-    ax2.set_ylabel("Velocity v / (m·s⁻¹)")
+    ax.set_title("自由落体：高度与速度", fontsize=16, fontweight="bold")
+    ax.set_xlabel("时间 t / s")
+    ax.set_ylabel("竖直高度 y / m")
+    ax2.set_ylabel("速度 v / (m·s⁻¹)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -776,14 +837,14 @@ def draw_freefall_device(h, row, idx, total):
     arrow_len = min(1.5, row["速度v(m/s)"] * 0.08 + 0.25)
     ax.add_patch(FancyArrow(1.0, ball_y + 0.65, 0, -arrow_len, width=0.05,
                             head_width=0.18, head_length=0.18, color="#4e7bd1"))
-    ax.text(1.18, ball_y + 0.2, "Velocity", fontsize=10)
+    ax.text(1.18, ball_y + 0.2, "速度", fontsize=10)
 
     ax.annotate("", xy=(-0.7, h), xytext=(-0.7, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
-    ax.text(-1.0, h / 2, f"h={h:.1f}m", rotation=90, va="center", fontsize=10)
-    ax.text(1.7, h + 0.25, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(-1.0, h / 2, f"高度 h={h:.1f} m", rotation=90, va="center", fontsize=10)
+    ax.text(1.7, h + 0.25, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Free Fall Device", fontsize=15, fontweight="bold")
+    ax.set_title("自由落体装置示意", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -796,9 +857,9 @@ def plot_ohm(df, idx):
     ax.plot(u, i, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(u[:idx+1], i[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(u.iloc[idx], i.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("Ohm's Law: I-U Curve", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Voltage U / V")
-    ax.set_ylabel("Current I / A")
+    ax.set_title("欧姆定律：I-U 图像", fontsize=16, fontweight="bold")
+    ax.set_xlabel("电压 U / V")
+    ax.set_ylabel("电流 I / A")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -842,9 +903,9 @@ def draw_ohm_device(row, resistance, idx, total):
     ax.text(2.72, 1.18, f"R={resistance:.1f}Ω", fontsize=11, color="#475d84")
     ax.text(0.78, 2.58, f"I={row['电流I(A)']:.2f}A", fontsize=11, color="#475d84")
     ax.text(2.82, 3.37, f"U={row['电压U(V)']:.2f}V", fontsize=11, color="#475d84")
-    ax.text(5.7, 3.55, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(5.7, 3.55, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Circuit Diagram", fontsize=15, fontweight="bold")
+    ax.set_title("电路装置示意", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -857,9 +918,9 @@ def plot_lens(df, f, idx):
     ax.plot(u, v, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.axvline(f, linestyle="--", alpha=0.55, color="#e58a4f", label="Focus f")
     ax.scatter(u.iloc[idx], v.iloc[idx], s=125, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("Lens: Object Distance vs Image Distance", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Object distance u / cm")
-    ax.set_ylabel("Image distance v / cm")
+    ax.set_title("凸透镜成像：物距与像距", fontsize=16, fontweight="bold")
+    ax.set_xlabel("物距 u / cm")
+    ax.set_ylabel("像距 v / cm")
     ax.grid(True, alpha=0.22)
     ax.legend()
     fig.tight_layout()
@@ -914,9 +975,9 @@ def draw_lens_device(f, row, idx, total):
     ax.text(-9.3, 2.35, f"u={row['物距u(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(3.8, 2.35, f"v={row['像距v(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(0.7, 2.35, f"{image_type} / {image_size}", fontsize=10, color="#475d84")
-    ax.text(7.0, 2.75, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(7.0, 2.75, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Lens Imaging Device", fontsize=15, fontweight="bold")
+    ax.set_title("凸透镜成像装置", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -929,8 +990,8 @@ def plot_newton(df, idx):
     ax.plot(f, a, marker="o", color="#3f7fd0", linewidth=2.4)
     ax.fill_between(f[:idx+1], a[:idx+1], color="#8ec5ff", alpha=0.13)
     ax.scatter(f.iloc[idx], a.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("Newton's Second Law: F-a Curve", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Force F / N")
+    ax.set_title("牛顿第二定律：F-a 图像", fontsize=16, fontweight="bold")
+    ax.set_xlabel("合外力 F / N")
     ax.set_ylabel("Acceleration a / (m/s²)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -958,9 +1019,9 @@ def draw_newton_device(row, mass, idx, total):
     ax.text(cart_x + 2.2, 1.58, f"F={row['力F(N)']:.2f}N", fontsize=11, color="#8a4141")
     ax.text(cart_x + 0.2, 2.02, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(cart_x + 0.2, 2.34, f"a={row['加速度a(m/s²)']:.2f}m/s²", fontsize=11, color="#475d84")
-    ax.text(8.2, 2.8, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(8.2, 2.8, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Newton Device", fontsize=15, fontweight="bold")
+    ax.set_title("牛顿第二定律装置", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -973,9 +1034,9 @@ def plot_heat(df, idx):
     ax.plot(t, temp, color="#ef6d6d", linewidth=2.6)
     ax.fill_between(t[:idx+1], temp[:idx+1], color="#ffc0b2", alpha=0.15)
     ax.scatter(t.iloc[idx], temp.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
-    ax.set_title("Temperature - Time", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Time t / s")
-    ax.set_ylabel("Temperature T / ℃")
+    ax.set_title("温度—时间图像", fontsize=16, fontweight="bold")
+    ax.set_xlabel("时间 t / s")
+    ax.set_ylabel("温度 T / ℃")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1008,23 +1069,23 @@ def draw_heat_device(row, power, mass, idx, total):
     ax.text(0.8, 2.5, f"P={power:.0f}W", fontsize=11, color="#475d84")
     ax.text(0.8, 2.05, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(0.8, 1.6, f"T={row['温度T(℃)']:.2f}℃", fontsize=11, color="#475d84")
-    ax.text(6.95, 2.8, f"Frame: {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(6.95, 2.8, f"帧序号：{idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Heating Device", fontsize=15, fontweight="bold")
+    ax.set_title("加热装置示意", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
 
 
 def plot_profile(concept, image_score, rule_score, process_score):
-    labels = ["Concept", "Image", "Rule", "Process"]
+    labels = ["概念理解", "图像分析", "规律总结", "过程参与"]
     values = [concept, image_score, rule_score, process_score]
     colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0"]
     fig, ax = plt.subplots(figsize=(7.8, 4.8))
     ax.bar(labels, values, color=colors)
     ax.set_ylim(0, 100)
-    ax.set_title("Student Profile", fontsize=16, fontweight="bold")
-    ax.set_ylabel("Score")
+    ax.set_title("学生能力画像", fontsize=16, fontweight="bold")
+    ax.set_ylabel("分数")
     ax.grid(axis="y", alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1035,9 +1096,9 @@ def plot_growth_curve(df_student):
     x = list(range(1, len(df_student) + 1))
     ax.plot(x, df_student["综合得分"], marker="o", linewidth=2.5, color="#3f7fd0")
     ax.fill_between(x, df_student["综合得分"], alpha=0.10, color="#8ec5ff")
-    ax.set_title("Growth Curve", fontsize=16, fontweight="bold")
-    ax.set_xlabel("Attempt")
-    ax.set_ylabel("Total score")
+    ax.set_title("成长曲线", fontsize=16, fontweight="bold")
+    ax.set_xlabel("实验次数")
+    ax.set_ylabel("综合得分")
     ax.set_ylim(0, 100)
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -1050,86 +1111,104 @@ def plot_growth_curve(df_student):
 QUESTION_BANK = {
     "平抛运动": {
         "concept": [
-            {"question": "1. 平抛运动水平方向的运动性质是？", "options": ["匀速直线运动", "匀加速直线运动", "静止"], "answer": "匀速直线运动", "analysis": "水平方向不受力，做匀速直线运动。"},
-            {"question": "2. 平抛运动竖直方向的运动性质是？", "options": ["自由落体运动", "匀速直线运动", "静止"], "answer": "自由落体运动", "analysis": "竖直方向只受重力作用。"}
+            {"question": "1. 平抛运动在水平方向上的运动性质是？", "options": ["匀速直线运动", "匀加速直线运动", "先加速后减速", "静止"], "answer": "匀速直线运动", "analysis": "水平方向忽略空气阻力时不受外力，速度保持不变。"},
+            {"question": "2. 平抛运动在竖直方向上的运动性质是？", "options": ["自由落体运动", "匀速直线运动", "往复运动", "静止"], "answer": "自由落体运动", "analysis": "竖直方向只受重力作用。"},
+            {"question": "3. 平抛运动的合运动轨迹形成原因是？", "options": ["水平匀速与竖直自由落体的合成", "只受水平推力作用", "只受竖直拉力作用", "速度始终沿同一直线变化"], "answer": "水平匀速与竖直自由落体的合成", "analysis": "平抛运动由两个互不影响的分运动合成。"}
         ],
         "image": [
-            {"question": "3. 理想平抛的轨迹形状是？", "options": ["抛物线", "圆", "直线"], "answer": "抛物线", "analysis": "分运动合成后是抛物线。"},
-            {"question": "4. 理想平抛中的 vx 随时间如何变化？", "options": ["保持不变", "逐渐增大", "逐渐减小"], "answer": "保持不变", "analysis": "理想平抛水平方向无加速度。"}
+            {"question": "4. 理想平抛的轨迹形状通常是？", "options": ["直线", "抛物线", "圆周", "折线"], "answer": "抛物线", "analysis": "合成运动轨迹是抛物线。"},
+            {"question": "5. 平抛运动中 vx 随时间如何变化？", "options": ["逐渐增大", "保持不变", "逐渐减小", "先减小后增大"], "answer": "保持不变", "analysis": "理想模型中水平加速度为 0。"},
+            {"question": "6. 平抛运动中 vy-t 图像更接近哪一种？", "options": ["水平直线", "开口向上的抛物线", "过原点的倾斜直线", "圆弧曲线"], "answer": "过原点的倾斜直线", "analysis": "竖直速度随时间线性变化。"}
         ],
         "rule": [
-            {"question": "5. 忽略空气阻力时，飞行时间主要由什么决定？", "options": ["抛出高度", "水平初速度", "物体质量"], "answer": "抛出高度", "analysis": "由竖直方向运动决定。"},
-            {"question": "6. 在高度不变时，水平初速度增大，射程将？", "options": ["变大", "变小", "不变"], "answer": "变大", "analysis": "飞行时间近似不变，速度越大射程越大。"}
+            {"question": "7. 忽略空气阻力时，平抛运动的飞行时间主要由什么决定？", "options": ["水平初速度", "物体质量", "抛出高度", "体积大小"], "answer": "抛出高度", "analysis": "飞行时间由竖直方向运动决定。"},
+            {"question": "8. 在抛出高度不变时，水平初速度增大，射程将怎样变化？", "options": ["先变小后变大", "不变", "变小", "变大"], "answer": "变大", "analysis": "飞行时间近似不变，速度越大射程越大。"},
+            {"question": "9. 两个小球从同一高度分别做平抛和自由落体，若同时开始且忽略空气阻力，它们落地时间如何？", "options": ["平抛更早", "自由落体更早", "同时落地", "无法判断"], "answer": "同时落地", "analysis": "竖直方向运动相同，落地时间相同。"}
         ]
     },
     "自由落体": {
         "concept": [
-            {"question": "1. 自由落体运动中物体主要受什么力？", "options": ["重力", "摩擦力", "弹力"], "answer": "重力", "analysis": "理想条件下只受重力。"},
-            {"question": "2. 自由落体属于哪类运动？", "options": ["匀加速直线运动", "匀速直线运动", "曲线运动"], "answer": "匀加速直线运动", "analysis": "其加速度近似恒定为 g。"}
+            {"question": "1. 自由落体运动中，理想情况下物体只受什么力？", "options": ["弹力", "摩擦力", "重力", "推力"], "answer": "重力", "analysis": "自由落体理想化条件下只受重力。"},
+            {"question": "2. 自由落体属于哪类运动？", "options": ["匀加速直线运动", "匀速直线运动", "曲线运动", "减速运动"], "answer": "匀加速直线运动", "analysis": "其加速度近似恒定为 g。"},
+            {"question": "3. 自由落体开始时，若初速度为 0，则速度变化特点是？", "options": ["始终不变", "均匀增大", "均匀减小", "先增大后减小"], "answer": "均匀增大", "analysis": "加速度恒定，速度随时间均匀增大。"}
         ],
         "image": [
-            {"question": "3. 自由落体的 v-t 图像通常是？", "options": ["过原点的直线", "水平直线", "抛物线"], "answer": "过原点的直线", "analysis": "速度与时间成正比。"},
-            {"question": "4. 自由落体的 s-t 图像通常更接近？", "options": ["抛物线", "直线", "圆弧"], "answer": "抛物线", "analysis": "位移与时间平方成正比。"}
+            {"question": "4. 自由落体的 v-t 图像通常是？", "options": ["抛物线", "过原点的直线", "水平直线", "圆弧"], "answer": "过原点的直线", "analysis": "速度与时间成正比。"},
+            {"question": "5. 自由落体的 s-t 图像更接近？", "options": ["直线", "圆", "抛物线", "水平线"], "answer": "抛物线", "analysis": "位移与时间平方成正比。"},
+            {"question": "6. 若图像中斜率越来越大，说明物体的什么量在增大？", "options": ["加速度方向", "高度", "路程单位", "速度"], "answer": "速度", "analysis": "位移—时间图像斜率反映速度大小。"}
         ],
         "rule": [
-            {"question": "5. 自由落体过程中，速度会怎样变化？", "options": ["均匀增大", "保持不变", "均匀减小"], "answer": "均匀增大", "analysis": "加速度恒定，速度均匀增大。"},
-            {"question": "6. 地面附近重力加速度通常近似为？", "options": ["9.8 m/s²", "1 m/s²", "98 m/s²"], "answer": "9.8 m/s²", "analysis": "常用近似值。"}
+            {"question": "7. 地面附近自由落体加速度通常近似为？", "options": ["1 m/s²", "98 m/s²", "9.8 m/s²", "0.98 m/s²"], "answer": "9.8 m/s²", "analysis": "常用近似值。"},
+            {"question": "8. 不计空气阻力时，不同质量的物体自由下落快慢如何？", "options": ["质量大的更快", "质量小的更快", "一样快", "无法比较"], "answer": "一样快", "analysis": "自由落体加速度与质量无关。"},
+            {"question": "9. 物体自由下落 2 s，其速度大小最接近？", "options": ["4.9 m/s", "9.8 m/s", "19.6 m/s", "29.4 m/s"], "answer": "19.6 m/s", "analysis": "v=gt≈9.8×2=19.6 m/s。"}
         ]
     },
     "欧姆定律": {
         "concept": [
-            {"question": "1. 欧姆定律表达式是？", "options": ["I = U / R", "U = I / R", "R = U × I"], "answer": "I = U / R", "analysis": "电流等于电压除以电阻。"},
-            {"question": "2. 当电阻一定时，电压增大，电流会？", "options": ["增大", "减小", "不变"], "answer": "增大", "analysis": "电流与电压成正比。"}
+            {"question": "1. 欧姆定律的基本表达式是？", "options": ["R = U × I", "I = U / R", "U = I / R", "P = UI / R"], "answer": "I = U / R", "analysis": "电流等于电压除以电阻。"},
+            {"question": "2. 当电阻一定时，电压增大，电流会怎样变化？", "options": ["减小", "不变", "先减小后增大", "增大"], "answer": "增大", "analysis": "电流与电压成正比。"},
+            {"question": "3. 欧姆定律适用于哪类导体的稳恒电流分析？", "options": ["一定条件下的导体", "所有材料任何情况", "只适用于液体", "只适用于超导体"], "answer": "一定条件下的导体", "analysis": "欧姆定律有适用条件。"}
         ],
         "image": [
-            {"question": "3. 纯电阻导体的 I-U 图像通常是？", "options": ["过原点的直线", "水平线", "抛物线"], "answer": "过原点的直线", "analysis": "说明 I 与 U 成正比。"},
-            {"question": "4. I-U 图线越陡，说明电阻通常？", "options": ["越小", "越大", "不变"], "answer": "越小", "analysis": "斜率约为 1/R。"}
+            {"question": "4. 纯电阻导体的 I-U 图像通常是？", "options": ["水平线", "过原点的直线", "抛物线", "闭合曲线"], "answer": "过原点的直线", "analysis": "说明 I 与 U 成正比。"},
+            {"question": "5. I-U 图线越陡，说明电阻通常怎样？", "options": ["越大", "不变", "越小", "先大后小"], "answer": "越小", "analysis": "斜率约为 1/R。"},
+            {"question": "6. 图像若不过原点，说明实验中更可能存在什么问题？", "options": ["电路存在误差或非理想因素", "电阻一定为零", "电流一定不变", "电压一定为负"], "answer": "电路存在误差或非理想因素", "analysis": "理想纯电阻 I-U 图线应过原点。"}
         ],
         "rule": [
-            {"question": "5. 电阻不变时，U 与 I 的关系是？", "options": ["成正比", "成反比", "无关"], "answer": "成正比", "analysis": "欧姆定律基本结论。"},
-            {"question": "6. 若 U=6V，R=3Ω，则 I=? ", "options": ["2A", "3A", "18A"], "answer": "2A", "analysis": "I = U/R = 2A。"}
+            {"question": "7. 若 U=6V，R=3Ω，则 I 等于多少？", "options": ["18A", "3A", "1A", "2A"], "answer": "2A", "analysis": "I = U/R = 2A。"},
+            {"question": "8. 在电压不变时，电阻增大，电流将？", "options": ["增大", "减小", "不变", "先增大后减小"], "answer": "减小", "analysis": "I 与 R 成反比。"},
+            {"question": "9. 若某导体两端电压变为原来的 2 倍，且电阻不变，则电流变为原来的？", "options": ["4 倍", "1/2 倍", "2 倍", "不变"], "answer": "2 倍", "analysis": "由 I=U/R 可知。"}
         ]
     },
     "凸透镜成像": {
         "concept": [
-            {"question": "1. 凸透镜对平行光的作用是？", "options": ["会聚", "发散", "不变"], "answer": "会聚", "analysis": "凸透镜能会聚平行光。"},
-            {"question": "2. 物体位于焦点内时通常成？", "options": ["正立虚像", "倒立实像", "等大实像"], "answer": "正立虚像", "analysis": "焦内成正立放大虚像。"}
+            {"question": "1. 凸透镜对平行光具有怎样的作用？", "options": ["发散", "会聚", "反射", "吸收"], "answer": "会聚", "analysis": "凸透镜能把平行光会聚到焦点附近。"},
+            {"question": "2. 当物体位于焦点内时，通常成什么像？", "options": ["倒立实像", "等大实像", "正立虚像", "缩小实像"], "answer": "正立虚像", "analysis": "焦内成正立放大虚像。"},
+            {"question": "3. 实像能够呈现在光屏上的原因是？", "options": ["光线会聚形成", "光线发散形成", "没有光线进入屏", "只由人眼想象得到"], "answer": "光线会聚形成", "analysis": "实像由实际光线会聚而成。"}
         ],
         "image": [
-            {"question": "3. 物距接近焦点外侧时，像距通常会？", "options": ["增大", "减小", "不变"], "answer": "增大", "analysis": "靠近焦点外侧时，像距变大。"},
-            {"question": "4. 物距大于两倍焦距时，像通常是？", "options": ["缩小", "放大", "不变"], "answer": "缩小", "analysis": "此时成倒立缩小实像。"}
+            {"question": "4. 物距接近焦点外侧时，像距通常会怎样变化？", "options": ["减小", "不变", "先减小后增大", "增大"], "answer": "增大", "analysis": "物距靠近焦点外侧时，像距显著增大。"},
+            {"question": "5. 当物距大于两倍焦距时，所成的像通常是？", "options": ["放大", "缩小", "等大", "看不见"], "answer": "缩小", "analysis": "大于 2f 时成倒立缩小实像。"},
+            {"question": "6. 若图像中像距为负值，通常表示成的是什么像？", "options": ["实像", "虚像", "等大实像", "无法判断"], "answer": "虚像", "analysis": "本平台数据中虚像常用负像距表示。"}
         ],
         "rule": [
-            {"question": "5. 凸透镜成实像时，物体应位于？", "options": ["焦点外", "焦点内", "焦点上"], "answer": "焦点外", "analysis": "焦点外才可成实像。"},
-            {"question": "6. 照相机应用的是哪类成像？", "options": ["倒立缩小实像", "正立放大虚像", "等大实像"], "answer": "倒立缩小实像", "analysis": "照相机底片上成倒立缩小实像。"}
+            {"question": "7. 凸透镜成实像时，物体应位于哪里？", "options": ["焦点上", "焦点外", "焦点内", "主光轴下方"], "answer": "焦点外", "analysis": "焦点外才可能形成实像。"},
+            {"question": "8. 照相机利用的是哪种成像情况？", "options": ["正立放大虚像", "倒立缩小实像", "等大实像", "正立缩小虚像"], "answer": "倒立缩小实像", "analysis": "照相机底片上成倒立缩小实像。"},
+            {"question": "9. 幻灯机、投影仪要得到放大的实像，物体位置通常应在？", "options": ["2f 以外", "焦点内", "f 和 2f 之间", "焦点上"], "answer": "f 和 2f 之间", "analysis": "f 与 2f 之间成倒立放大实像。"}
         ]
     },
     "牛顿第二定律": {
         "concept": [
-            {"question": "1. 牛顿第二定律可表示为？", "options": ["F = ma", "F = mv", "P = W/t"], "answer": "F = ma", "analysis": "合外力等于质量与加速度的乘积。"},
-            {"question": "2. 在合外力一定时，质量越大，加速度会？", "options": ["越小", "越大", "不变"], "answer": "越小", "analysis": "a = F/m。"}
+            {"question": "1. 牛顿第二定律可表示为？", "options": ["P = W/t", "F = ma", "F = mv", "p = mv"], "answer": "F = ma", "analysis": "合外力等于质量与加速度的乘积。"},
+            {"question": "2. 在合外力一定时，质量越大，加速度会怎样？", "options": ["越大", "不变", "越小", "先小后大"], "answer": "越小", "analysis": "a = F/m。"},
+            {"question": "3. 当质量保持不变时，改变合外力，研究的是哪两个量的关系？", "options": ["位移与时间", "压力与面积", "力与加速度", "功与功率"], "answer": "力与加速度", "analysis": "这是验证牛顿第二定律的常见方法。"}
         ],
         "image": [
-            {"question": "3. 质量一定时，a-F 图像一般是？", "options": ["过原点的直线", "水平线", "抛物线"], "answer": "过原点的直线", "analysis": "说明加速度与力成正比。"},
-            {"question": "4. 斜率越大，表示物体质量通常？", "options": ["越小", "越大", "不变"], "answer": "越小", "analysis": "a/F = 1/m。"}
+            {"question": "4. 质量一定时，a-F 图像通常是？", "options": ["过原点的直线", "水平直线", "抛物线", "S 形曲线"], "answer": "过原点的直线", "analysis": "说明 a 与 F 成正比。"},
+            {"question": "5. 图像斜率越大，表示物体质量通常怎样？", "options": ["越大", "越小", "不变", "无法比较"], "answer": "越小", "analysis": "因为 a/F = 1/m。"},
+            {"question": "6. 若图线明显偏离直线，可能意味着什么？", "options": ["实验误差或受外界阻力影响", "物体质量一定为零", "加速度恒为零", "牛顿第二定律失效"], "answer": "实验误差或受外界阻力影响", "analysis": "实际实验会存在摩擦、测量误差等。"}
         ],
         "rule": [
-            {"question": "5. 质量一定时，加速度与合外力关系为？", "options": ["成正比", "成反比", "无关"], "answer": "成正比", "analysis": "质量一定时 a ∝ F。"},
-            {"question": "6. 若 m=2kg，F=6N，则 a=? ", "options": ["3m/s²", "12m/s²", "8m/s²"], "answer": "3m/s²", "analysis": "a = F/m = 3。"}
+            {"question": "7. 若 m=2kg，F=6N，则加速度 a 为多少？", "options": ["12 m/s²", "8 m/s²", "3 m/s²", "1/3 m/s²"], "answer": "3 m/s²", "analysis": "a = F/m = 3 m/s²。"},
+            {"question": "8. 当合外力变为原来的 3 倍，而质量不变时，加速度将？", "options": ["变为原来的 3 倍", "变为原来的 1/3", "不变", "无法判断"], "answer": "变为原来的 3 倍", "analysis": "质量一定时 a ∝ F。"},
+            {"question": "9. 当合外力不变、质量变为原来的 2 倍时，加速度将？", "options": ["变为原来的 2 倍", "不变", "变为原来的 1/2", "变为原来的 4 倍"], "answer": "变为原来的 1/2", "analysis": "a 与 m 成反比。"}
         ]
     },
     "比热容与升温": {
         "concept": [
-            {"question": "1. 比热容表示什么？", "options": ["单位质量物质升高1℃所吸收的热量", "单位时间内做的功", "单位面积所受压力"], "answer": "单位质量物质升高1℃所吸收的热量", "analysis": "这是比热容定义。"},
-            {"question": "2. 在相同加热条件下，比热容越大，升温会？", "options": ["越慢", "越快", "不变"], "answer": "越慢", "analysis": "比热容越大，同样热量带来的温升越小。"}
+            {"question": "1. 比热容表示什么物理意义？", "options": ["单位质量物质升高 1℃ 所吸收的热量", "单位时间内做的功", "单位面积受力大小", "单位体积所含质量"], "answer": "单位质量物质升高 1℃ 所吸收的热量", "analysis": "这是比热容的定义。"},
+            {"question": "2. 在相同加热条件下，比热容越大，升温会怎样？", "options": ["越快", "不变", "越慢", "先快后慢"], "answer": "越慢", "analysis": "同样热量下，比热容越大，温升越小。"},
+            {"question": "3. 质量相同的水和沙子吸收相同热量，通常哪一个升温较慢？", "options": ["水", "沙子", "一样快", "无法判断"], "answer": "水", "analysis": "水的比热容较大。"}
         ],
         "image": [
-            {"question": "3. 恒定功率加热时，T-t 图像通常接近？", "options": ["上升直线", "水平线", "下降曲线"], "answer": "上升直线", "analysis": "简化条件下温度近似随时间线性变化。"},
-            {"question": "4. 质量更小的物体，升温曲线通常？", "options": ["更陡", "更平", "相同"], "answer": "更陡", "analysis": "ΔT = Pt/(mc)。"}
+            {"question": "4. 恒定功率加热时，T-t 图像通常更接近？", "options": ["下降曲线", "水平线", "上升直线", "圆弧"], "answer": "上升直线", "analysis": "简化条件下温度随时间近似线性上升。"},
+            {"question": "5. 质量更小的物体在同功率加热下，升温曲线通常怎样？", "options": ["更平缓", "更陡", "先陡后平", "完全重合"], "answer": "更陡", "analysis": "ΔT = Pt/(mc)。"},
+            {"question": "6. 两条升温图线中，斜率更大的一条通常表示该物体？", "options": ["升温更快", "质量更大", "比热容一定更大", "受热更少"], "answer": "升温更快", "analysis": "图线斜率反映单位时间内温度变化快慢。"}
         ],
         "rule": [
-            {"question": "5. 在功率一定时，升温快慢与哪两个量有关？", "options": ["质量和比热容", "电阻和电压", "速度和位移"], "answer": "质量和比热容", "analysis": "由 ΔT = Pt/(mc) 可知。"},
-            {"question": "6. 当质量和比热容都增大时，升温速度会？", "options": ["减慢", "加快", "不变"], "answer": "减慢", "analysis": "分母增大，温升速率下降。"}
+            {"question": "7. 在功率一定时，升温快慢与哪两个量直接有关？", "options": ["速度和位移", "电阻和电压", "质量和比热容", "密度和体积"], "answer": "质量和比热容", "analysis": "由 ΔT = Pt/(mc) 可知。"},
+            {"question": "8. 当质量和比热容都增大时，升温速度会怎样？", "options": ["加快", "减慢", "不变", "先减慢后加快"], "answer": "减慢", "analysis": "分母 mc 增大，温升速率减小。"},
+            {"question": "9. 若某物体在相同条件下 60 s 升温 12℃，则 30 s 约升温多少？", "options": ["24℃", "12℃", "3℃", "6℃"], "answer": "6℃", "analysis": "近似线性升温时，时间减半，温升也约减半。"}
         ]
     }
 }
@@ -1237,6 +1316,58 @@ def generate_comment_and_advice(concept_score, image_score, rule_score, process_
 
     return comment, weak_points, advice
 
+
+# =========================
+# 题目与展示增强
+# =========================
+def get_shuffled_options(question_text, options):
+    seed = int(hashlib.md5(question_text.encode("utf-8")).hexdigest()[:8], 16)
+    rng = np.random.default_rng(seed)
+    idxs = list(range(len(options)))
+    rng.shuffle(idxs)
+    return [options[i] for i in idxs]
+
+
+def extend_question_bank():
+    extra = {
+        "平抛运动": {
+            "concept": {"question": "4. 平抛运动刚抛出瞬间，物体在竖直方向上的初速度是？", "options": ["等于水平速度", "为 0", "等于 g", "无法确定"], "answer": "为 0", "analysis": "平抛是沿水平方向抛出，初始竖直分速度为 0。"},
+            "image": {"question": "8. 平抛运动的 x-t 图像通常更接近？", "options": ["过原点的倾斜直线", "开口向下抛物线", "水平直线", "圆弧"], "answer": "过原点的倾斜直线", "analysis": "水平方向做匀速直线运动，因此 x 与 t 成正比。"},
+            "rule": {"question": "12. 在同一地点做平抛实验时，若只增大抛出高度，飞行时间将？", "options": ["变短", "不变", "变长", "先变长后变短"], "answer": "变长", "analysis": "飞行时间由竖直方向决定，高度越大，落地时间越长。"}
+        },
+        "自由落体": {
+            "concept": {"question": "4. 自由落体中“自由”强调的是？", "options": ["没有受到任何力", "只受重力作用", "速度不变", "下落方向任意"], "answer": "只受重力作用", "analysis": "理想自由落体忽略空气阻力，仅受重力。"},
+            "image": {"question": "8. 在 v-t 图像中，直线斜率表示的物理量是？", "options": ["位移", "速度", "加速度", "路程"], "answer": "加速度", "analysis": "速度—时间图像的斜率表示加速度。"},
+            "rule": {"question": "12. 一个物体自由下落 1 s，下落位移最接近？", "options": ["4.9 m", "9.8 m", "14.7 m", "19.6 m"], "answer": "4.9 m", "analysis": "s=1/2gt²≈4.9m。"}
+        },
+        "欧姆定律": {
+            "concept": {"question": "4. 在欧姆定律实验中，改变电压主要是为了研究哪两个量的关系？", "options": ["电压与电流", "电阻与功率", "功率与时间", "电荷与电压"], "answer": "电压与电流", "analysis": "保持电阻不变，通过改变电压观察电流变化。"},
+            "image": {"question": "8. 若两条 I-U 直线都过原点，其中更平缓的一条对应的电阻通常？", "options": ["更小", "相同", "更大", "无法判断"], "answer": "更大", "analysis": "斜率约等于 1/R，越平缓说明电阻越大。"},
+            "rule": {"question": "12. 当 I=0.5A，R=8Ω 时，导体两端电压 U 为？", "options": ["16V", "8V", "4V", "2V"], "answer": "4V", "analysis": "U=IR=0.5×8=4V。"}
+        },
+        "凸透镜成像": {
+            "concept": {"question": "4. 凸透镜焦距是指？", "options": ["透镜厚度", "焦点到光心的距离", "物体到透镜的距离", "像到光屏的距离"], "answer": "焦点到光心的距离", "analysis": "焦距是光心到焦点的距离。"},
+            "image": {"question": "8. 当物体从远处逐渐靠近凸透镜且始终在焦点外时，像距总体趋势是？", "options": ["逐渐增大", "逐渐减小", "始终不变", "先增大后减小"], "answer": "逐渐增大", "analysis": "物体靠近焦点外侧时，像距会明显增大。"},
+            "rule": {"question": "12. 放大镜利用的成像原理通常是？", "options": ["倒立缩小实像", "正立放大虚像", "倒立等大实像", "倒立放大实像"], "answer": "正立放大虚像", "analysis": "放大镜工作时，物体一般位于焦点内。"}
+        },
+        "牛顿第二定律": {
+            "concept": {"question": "4. 牛顿第二定律研究的是合外力、质量和什么之间的关系？", "options": ["速度", "位移", "加速度", "时间"], "answer": "加速度", "analysis": "牛顿第二定律说明加速度由合外力和质量共同决定。"},
+            "image": {"question": "8. 在质量一定时，a-F 图像是一条直线，这说明？", "options": ["a 与 F 成正比", "a 与 F 成反比", "a 与 F 无关", "F 保持不变"], "answer": "a 与 F 成正比", "analysis": "直线过原点表明比例关系。"},
+            "rule": {"question": "12. 若 F=10N，a=5m/s²，则物体质量 m 为？", "options": ["0.5kg", "2kg", "5kg", "50kg"], "answer": "2kg", "analysis": "由 F=ma 得 m=F/a=2kg。"}
+        },
+        "比热容与升温": {
+            "concept": {"question": "4. 同种物质的比热容通常反映了它的什么特性？", "options": ["吸热升温难易程度", "密度大小规律", "导电能力", "硬度大小"], "answer": "吸热升温难易程度", "analysis": "比热容越大，升高相同温度所需热量越多。"},
+            "image": {"question": "8. 在相同加热条件下，两条 T-t 图线中更平缓的一条通常表示？", "options": ["升温更慢", "功率更大", "时间更短", "温度更低"], "answer": "升温更慢", "analysis": "图线越平缓，单位时间升温越少。"},
+            "rule": {"question": "12. 在其他条件不变时，若加热功率增大，升温速度通常会？", "options": ["加快", "减慢", "不变", "先快后慢"], "answer": "加快", "analysis": "由 ΔT = Pt/(mc) 可知，功率越大，单位时间升温越快。"}
+        }
+    }
+    for exp_name, items in extra.items():
+        for cat, q in items.items():
+            if q["question"] not in [x["question"] for x in QUESTION_BANK[exp_name][cat]]:
+                QUESTION_BANK[exp_name][cat].append(q)
+
+
+extend_question_bank()
 
 # =========================
 # 评分
@@ -1365,7 +1496,7 @@ def render_experiment_demo(experiment_name, df, params, result):
         progress = frame_idx / max(total - 1, 1)
 
         with chart_placeholder.container():
-            top_left, top_mid, top_right = st.columns([1.2, 1.2, 0.95])
+            top_left, top_mid, top_right = st.columns([1.22, 1.22, 0.96])
 
             with top_left:
                 if experiment_name == "平抛运动":
@@ -1429,11 +1560,12 @@ def render_experiment_demo(experiment_name, df, params, result):
     current_row = draw_frame(idx)
 
     if play_clicked:
-        step = max(1, int(speed))
-        for frame_idx in range(idx, total, step):
+        frame_sequence = build_playback_frames(total, idx, speed)
+        delay_map = {1: 0.08, 2: 0.055, 4: 0.036, 8: 0.022}
+        for frame_idx in frame_sequence:
             st.session_state[f"frame_{experiment_name}_实验过程"] = frame_idx
             current_row = draw_frame(frame_idx)
-            time.sleep(0.08)
+            time.sleep(delay_map.get(speed, 0.045))
 
         st.session_state[f"frame_{experiment_name}_实验过程"] = total - 1
 
@@ -1451,20 +1583,20 @@ def render_analysis_tab(experiment_name, df, params):
             fig, ax = plt.subplots(figsize=(8.8, 5))
             ax.plot(df["时间(s)"], df["水平位移x(m)"], label="x-t", color="#3f7fd0", linewidth=2.3)
             ax.plot(df["时间(s)"], df["竖直高度y(m)"], label="y-t", color="#ef6d6d", linewidth=2.3)
-            ax.set_title("Displacement - Time", fontsize=16, fontweight="bold")
-            ax.set_xlabel("Time t / s")
+            ax.set_title("位移—时间图像", fontsize=16, fontweight="bold")
+            ax.set_xlabel("时间 t / s")
             ax.grid(True, alpha=0.22)
             ax.legend()
             fig.tight_layout()
             st.pyplot(fig, use_container_width=True, clear_figure=True)
-        st.write("图像结论：理想平抛中，vx 基本保持不变，vy 随时间线性变化，轨迹为抛物线。")
+        st.write("图像结论：理想平抛中，水平速度 vx 基本保持不变，竖直速度 vy 随时间线性变化，整体轨迹为抛物线。")
 
     elif experiment_name == "自由落体":
         fig, ax = plt.subplots(figsize=(8.8, 5))
-        ax.plot(df["时间(s)"], df["下落位移s(m)"], label="s-t", color="#3f7fd0", linewidth=2.4)
-        ax.plot(df["时间(s)"], df["速度v(m/s)"], label="v-t", color="#ef6d6d", linewidth=2.4)
-        ax.set_title("Free Fall Curves", fontsize=16, fontweight="bold")
-        ax.set_xlabel("Time t / s")
+        ax.plot(df["时间(s)"], df["下落位移s(m)"], label="位移 s-t", color="#3f7fd0", linewidth=2.4)
+        ax.plot(df["时间(s)"], df["速度v(m/s)"], label="合速度 v-t", color="#ef6d6d", linewidth=2.4)
+        ax.set_title("自由落体图像", fontsize=16, fontweight="bold")
+        ax.set_xlabel("时间 t / s")
         ax.grid(True, alpha=0.22)
         ax.legend()
         fig.tight_layout()
@@ -1585,7 +1717,7 @@ if role == "学生端":
             <div class="hero-subtitle">
                 当前学生：<b>{student_name}</b>（{class_name}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
+                平台支持多实验仿真、丝滑动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析，适合课堂展示、分层练习与课后复盘。
             </div>
         </div>
         """,
@@ -1659,7 +1791,9 @@ if role == "学生端":
 
     with tab4:
         section_title(f"{experiment_name}实验测试")
-        st.markdown("请完成以下 6 道题，系统会从概念理解、图像分析、规律总结三个维度自动评分。")
+        st.markdown("请完成以下 12 道题，系统会从概念理解、图像分析、规律总结三个维度自动评分，题目与选项分布已经重新优化，更适合课堂直接使用。")
+
+        st.markdown("""<div class="quiz-tip-box"><b>课堂使用建议：</b>先组织学生观看动画并暂停关键帧，再完成测试。这样可以把“观察—讨论—作答—讲评”串成完整课堂活动。题目已增加到 12 题，并尽量避免正确答案长期集中在同一选项位置。</div>""", unsafe_allow_html=True)
 
         bank = QUESTION_BANK[experiment_name]
         answers = {}
@@ -1674,7 +1808,7 @@ if role == "学生端":
             for idx, q in enumerate(bank[category]):
                 answers[f"{category}_{idx}"] = st.radio(
                     q["question"],
-                    q["options"],
+                    get_shuffled_options(q["question"], q["options"]),
                     key=f"{experiment_name}_{category}_{idx}"
                 )
 
@@ -1806,7 +1940,7 @@ if role == "学生端":
 - 六个实验都加入了更精美的实验过程展示  
 - 加入播放、重置、倍速控制和滑块查看  
 - 加入轨迹拖尾、动态高亮、拟物装置、速度/位移箭头  
-- 图内文字改为英文，减少云端字体兼容问题  
+- 图内文字已尽量改为中文，适合课堂展示使用  
 
 ### 后续可继续扩展
 - 增加更多实验模块  
@@ -1944,7 +2078,7 @@ else:
                 colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0", "#a7b8ff", "#8ec5ff"]
                 ax.bar(exp_stats["实验名称"], exp_stats["综合得分"], color=colors[:len(exp_stats)])
                 ax.set_ylim(0, 100)
-                ax.set_title("Average Score by Experiment", fontsize=16, fontweight="bold")
+                ax.set_title("各实验平均成绩", fontsize=16, fontweight="bold")
                 ax.set_ylabel("Average score")
                 ax.grid(axis="y", alpha=0.22)
                 plt.xticks(rotation=20)
