@@ -9,6 +9,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Circle, FancyArrow, Polygon
@@ -16,18 +17,12 @@ from matplotlib.patches import Rectangle, Circle, FancyArrow, Polygon
 # =========================
 # 基础设置
 # =========================
-matplotlib.rcParams["font.sans-serif"] = [
-    "DejaVu Sans",
-    "Arial Unicode MS",
-    "Noto Sans CJK SC",
-    "SimHei",
-    "Microsoft YaHei"
-]
+matplotlib.rcParams["font.sans-serif"] = ["DejaVu Sans", "Arial", "sans-serif"]
 matplotlib.rcParams["axes.unicode_minus"] = False
 matplotlib.rcParams["font.family"] = "sans-serif"
 
 st.set_page_config(
-    page_title="中学物理虚拟实验与智能测评平台",
+    page_title="AI赋能中学物理虚拟实验与智能测评平台",
     page_icon="🧪",
     layout="wide"
 )
@@ -68,7 +63,7 @@ def inject_custom_css():
     }
 
     .block-container {
-        padding-top: 2.6rem;
+        padding-top: 2.2rem;
         padding-bottom: 2rem;
         padding-left: 2rem;
         padding-right: 2rem;
@@ -183,6 +178,32 @@ def inject_custom_css():
         color: #d3e6ff;
         line-height: 1.8;
         margin-top: 0.6rem;
+    }
+
+
+    header[data-testid="stHeader"] {
+        background: rgba(0,0,0,0);
+    }
+
+    [data-testid="stSidebarNav"],
+    [data-testid="stSidebarNavItems"],
+    [data-testid="stSidebarNavSeparator"] {
+        display: none !important;
+    }
+
+    span.material-symbols-rounded,
+    i.material-icons,
+    .material-icons-round {
+        font-family: initial !important;
+    }
+
+    .interactive-shell {
+        background: linear-gradient(160deg, rgba(29,39,53,0.98), rgba(21,28,38,0.98));
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        padding: 1rem 1rem 0.7rem 1rem;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.20);
+        margin-top: 0.5rem;
     }
 
     .footer-note {
@@ -813,7 +834,7 @@ def plot_projectile_trajectory(df, h, idx):
 
     if idx < len(df) - 1:
         ax.scatter(x[-1], 0, s=90, color="#ffb56b", edgecolor="white", linewidth=1.2, zorder=4)
-        ax.text(x[-1], 0.35, "Landing", ha="center", fontsize=10, color="#9b5a00")
+        ax.text(x[-1], 0.35, "end", ha="center", fontsize=10, color="#9b5a00")
 
     vx = df["水平速度vx(m/s)"].iloc[idx]
     vy = df["竖直速度vy(m/s)"].iloc[idx]
@@ -823,7 +844,7 @@ def plot_projectile_trajectory(df, h, idx):
     ax.arrow(x[idx], y[idx], 0, vy * scale, width=0.03, head_width=0.18, head_length=0.25,
              color="#e66767", length_includes_head=True, zorder=6)
 
-    ax.set_title("Projectile Path", fontsize=16, fontweight="bold")
+    ax.set_title("x-y", fontsize=16, fontweight="bold")
     ax.set_xlabel("x / m")
     ax.set_ylabel("y / m")
     ax.axhline(0, linestyle="--", alpha=0.35, color="#5776a2")
@@ -873,10 +894,10 @@ def draw_projectile_device(h, row, v0, idx, total):
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
     ax.text((ball_x + 2.1) / 2, -0.48, f"x={row['水平位移x(m)']:.2f} m", ha="center", fontsize=10)
 
-    ax.text(ball_x + 0.22, ball_y + 0.22, "Ball", fontsize=10)
-    ax.text(xmax - 2.2, ymax - 0.55, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(ball_x + 0.22, ball_y + 0.22, "o", fontsize=10)
+    ax.text(xmax - 2.2, ymax - 0.55, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Projectile Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -912,10 +933,10 @@ def plot_freefall_main(df, idx):
     ax2.plot(t, v, color="#ef6d6d", linewidth=2.2, linestyle="--", label="v-t")
     ax2.scatter(t.iloc[idx], v.iloc[idx], color="#ef6d6d", s=85, edgecolor="white", zorder=5)
 
-    ax.set_title("Free Fall: y & v", fontsize=16, fontweight="bold")
+    ax.set_title("y-t & v-t", fontsize=16, fontweight="bold")
     ax.set_xlabel("t / s")
     ax.set_ylabel("y / m")
-    ax2.set_ylabel("速度 v / (m·s⁻¹)")
+    ax2.set_ylabel("v / (m/s)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -946,9 +967,9 @@ def draw_freefall_device(h, row, idx, total):
     ax.annotate("", xy=(-0.7, h), xytext=(-0.7, 0),
                 arrowprops=dict(arrowstyle="<->", color="#6a7e99", linewidth=1.6))
     ax.text(-1.0, h / 2, f"h={h:.1f} m", rotation=90, va="center", fontsize=10)
-    ax.text(1.7, h + 0.25, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(1.7, h + 0.25, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Free Fall Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1005,11 +1026,11 @@ def draw_ohm_device(row, resistance, idx, total):
             ax.add_patch(Circle((x, 2.0), 0.05, color="#55c2ff", alpha=0.78))
 
     ax.text(2.72, 1.18, f"R={resistance:.1f}Ω", fontsize=11, color="#475d84")
-    ax.text(0.78, 2.58, f"I={row['电流I(A)']:.2f}A", fontsize=11, color="#475d84")
-    ax.text(2.82, 3.37, f"U={row['电压U(V)']:.2f}V", fontsize=11, color="#475d84")
-    ax.text(5.7, 3.55, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(0.78, 2.58, f"I={row['电流I(A)']:.2f} A", fontsize=11, color="#475d84")
+    ax.text(2.82, 3.37, f"U={row['电压U(V)']:.2f} V", fontsize=11, color="#475d84")
+    ax.text(5.7, 3.55, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Circuit Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1055,17 +1076,17 @@ def draw_lens_device(f, row, idx, total):
     obj_h = 1.45
     ax.add_patch(FancyArrow(obj_x, 0, 0, obj_h, width=0.08, head_width=0.28, head_length=0.18,
                             color="#ff7f7f", zorder=5))
-    ax.text(obj_x - 0.3, obj_h + 0.18, "Object", fontsize=10)
+    ax.text(obj_x - 0.3, obj_h + 0.18, "obj", fontsize=10)
 
     img_h = 1.2 if image_size == "缩小" else (1.9 if image_size == "放大" else 1.45)
     if image_type == "倒立实像":
         ax.add_patch(FancyArrow(v, 0, 0, -img_h, width=0.08, head_width=0.28, head_length=0.18,
                                 color="#4a7bd1", zorder=5))
-        ax.text(v - 0.28, -img_h - 0.35, "Image", fontsize=10)
+        ax.text(v - 0.28, -img_h - 0.35, "img", fontsize=10)
     else:
         ax.add_patch(FancyArrow(v, 0, 0, img_h, width=0.08, head_width=0.28, head_length=0.18,
                                 color="#4a7bd1", zorder=5))
-        ax.text(v - 0.28, img_h + 0.15, "Image", fontsize=10)
+        ax.text(v - 0.28, img_h + 0.15, "img", fontsize=10)
 
     if image_type == "倒立实像":
         ax.plot([obj_x, 0, v], [obj_h, obj_h, 0], color="#f2a444", linewidth=1.6)
@@ -1078,10 +1099,10 @@ def draw_lens_device(f, row, idx, total):
 
     ax.text(-9.3, 2.35, f"u={row['物距u(cm)']:.1f} cm", fontsize=10, color="#475d84")
     ax.text(3.8, 2.35, f"v={row['像距v(cm)']:.1f} cm", fontsize=10, color="#475d84")
-    ax.text(0.7, 2.35, f"{image_type} / {image_size}", fontsize=10, color="#475d84")
-    ax.text(7.0, 2.75, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(0.7, 2.35, f"type / size", fontsize=10, color="#475d84")
+    ax.text(7.0, 2.75, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Lens Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1096,7 +1117,7 @@ def plot_newton(df, idx):
     ax.scatter(f.iloc[idx], a.iloc[idx], s=120, color="#ff9b2f", edgecolor="white", zorder=5)
     ax.set_title("Newton II: F-a", fontsize=16, fontweight="bold")
     ax.set_xlabel("F / N")
-    ax.set_ylabel("Acceleration a / (m/s²)")
+    ax.set_ylabel("a / (m/s^2)")
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1123,9 +1144,9 @@ def draw_newton_device(row, mass, idx, total):
     ax.text(cart_x + 2.2, 1.58, f"F={row['力F(N)']:.2f}N", fontsize=11, color="#8a4141")
     ax.text(cart_x + 0.2, 2.02, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
     ax.text(cart_x + 0.2, 2.34, f"a={row['加速度a(m/s²)']:.2f}m/s²", fontsize=11, color="#475d84")
-    ax.text(8.2, 2.8, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(8.2, 2.8, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Newton II Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1172,10 +1193,10 @@ def draw_heat_device(row, power, mass, idx, total):
 
     ax.text(0.8, 2.5, f"P={power:.0f}W", fontsize=11, color="#475d84")
     ax.text(0.8, 2.05, f"m={mass:.2f}kg", fontsize=11, color="#475d84")
-    ax.text(0.8, 1.6, f"T={row['温度T(℃)']:.2f}℃", fontsize=11, color="#475d84")
-    ax.text(6.95, 2.8, f"Frame {idx+1}/{total}", fontsize=10, color="#607090")
+    ax.text(0.8, 1.6, f"T={row['温度T(℃)']:.2f} C", fontsize=11, color="#475d84")
+    ax.text(6.95, 2.8, f"n={idx+1}/{total}", fontsize=10, color="#607090")
 
-    ax.set_title("Heating Device", fontsize=15, fontweight="bold")
+    ax.set_title("device", fontsize=15, fontweight="bold")
     ax.axis("off")
     fig.tight_layout()
     return fig
@@ -1188,8 +1209,8 @@ def plot_profile(concept, image_score, rule_score, process_score):
     fig, ax = plt.subplots(figsize=(7.8, 4.8))
     ax.bar(labels, values, color=colors)
     ax.set_ylim(0, 100)
-    ax.set_title("学生能力画像", fontsize=16, fontweight="bold")
-    ax.set_ylabel("分数")
+    ax.set_title("Profile", fontsize=16, fontweight="bold")
+    ax.set_ylabel("Score")
     ax.grid(axis="y", alpha=0.22)
     fig.tight_layout()
     return fig
@@ -1200,9 +1221,9 @@ def plot_growth_curve(df_student):
     x = list(range(1, len(df_student) + 1))
     ax.plot(x, df_student["综合得分"], marker="o", linewidth=2.5, color="#3f7fd0")
     ax.fill_between(x, df_student["综合得分"], alpha=0.10, color="#8ec5ff")
-    ax.set_title("成长曲线", fontsize=16, fontweight="bold")
-    ax.set_xlabel("实验次数")
-    ax.set_ylabel("综合得分")
+    ax.set_title("Trend", fontsize=16, fontweight="bold")
+    ax.set_xlabel("No.")
+    ax.set_ylabel("Score")
     ax.set_ylim(0, 100)
     ax.grid(True, alpha=0.22)
     fig.tight_layout()
@@ -1601,100 +1622,264 @@ def render_plot_notation_help(experiment_name):
     st.caption(notes.get(experiment_name, "图中使用英文字母或物理符号标注，便于兼容不同设备字体。"))
 
 
+
+def render_interactive_experiment(experiment_name, params):
+    st.markdown('<div class="interactive-shell">', unsafe_allow_html=True)
+    st.markdown("#### 交互实验（新增）")
+    st.caption("拖动或调节参数即可交互观察。该模块是在原有实验演示基础上新增的前端互动方案，不影响原来的课堂流程与测评功能。")
+
+    def show_html(html, height=520):
+        components.html(html, height=height, scrolling=False)
+
+    if experiment_name == "平抛运动":
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>v0 <input id='v0' type='range' min='2' max='20' step='0.5' value='__V0__'></label>
+            <span id='v0v'></span>
+            <label>h <input id='h' type='range' min='2' max='20' step='0.5' value='__H__'></label>
+            <span id='hv'></span>
+            <button onclick='resetAni()'>Reset</button>
+            <span style='opacity:.8'>Drag the red ball to reset launch point.</span>
+          </div>
+          <canvas id='cv' width='980' height='400' style='width:100%;background:#f7f9fd;border-radius:16px;cursor:crosshair'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: x horizontal displacement, y height, v0 initial horizontal speed.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+        const v0=document.getElementById('v0'),h=document.getElementById('h'),v0v=document.getElementById('v0v'),hv=document.getElementById('hv');
+        let t=0,drag=false; const g=9.8;
+        function sx(x){return 90+x*48} ; function sy(y){return 340-y*22}
+        function resetAni(){t=0}
+        function draw(){
+          const H=parseFloat(h.value), V=parseFloat(v0.value); v0v.textContent=V.toFixed(1)+' m/s'; hv.textContent=H.toFixed(1)+' m';
+          ctx.clearRect(0,0,cv.width,cv.height);
+          ctx.strokeStyle='#7b93b5'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(50,340); ctx.lineTo(940,340); ctx.stroke();
+          ctx.fillStyle='#b6c7e4'; ctx.fillRect(70, sy(H), 58, 340-sy(H));
+          ctx.strokeStyle='#4c83d4'; ctx.lineWidth=2.5; ctx.beginPath();
+          for(let i=0;i<200;i++){ let tt=i/199*Math.sqrt(2*H/g); let x=V*tt, y=H-0.5*g*tt*tt; if(i===0){ctx.moveTo(sx(x),sy(y));} else {ctx.lineTo(sx(x),sy(y));} }
+          ctx.stroke();
+          let tf=Math.sqrt(2*H/g); t+=0.016; if(t>tf){t=tf;} let x=V*t, y=Math.max(0,H-0.5*g*t*t);
+          ctx.fillStyle='#ff6f7a'; ctx.beginPath(); ctx.arc(sx(x),sy(y),8,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#29405f'; ctx.fillText('x=' + x.toFixed(2) + ' m', sx(x)+10, 330); ctx.fillText('y=' + y.toFixed(2) + ' m', sx(x)+10, sy(y)-12);
+          requestAnimationFrame(draw);
+        }
+        cv.onmousedown=(e)=>{const r=cv.getBoundingClientRect(),mx=(e.clientX-r.left)*cv.width/r.width,my=(e.clientY-r.top)*cv.height/r.height;const H=parseFloat(h.value); if((mx-sx(0))**2+(my-sy(H))**2<180){drag=true;}};
+        cv.onmousemove=(e)=>{if(!drag)return;const r=cv.getBoundingClientRect(),my=(e.clientY-r.top)*cv.height/r.height;let H=Math.max(2,Math.min(20,(340-my)/22));h.value=(Math.round(H*2)/2).toFixed(1);t=0};
+        window.onmouseup=()=>{drag=false;};
+        draw();
+        </script>
+        """.replace('__V0__', str(params.get('v0', 10.0))).replace('__H__', str(params.get('h', 10.0)))
+        show_html(html, 500)
+
+    elif experiment_name == "自由落体":
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>h <input id='h' type='range' min='5' max='30' step='0.5' value='__H__'></label><span id='hv'></span>
+            <label>g <input id='g' type='range' min='5' max='15' step='0.1' value='__G__'></label><span id='gv'></span>
+            <button onclick='t=0'>Reset</button>
+          </div>
+          <canvas id='cv' width='980' height='400' style='width:100%;background:#f7f9fd;border-radius:16px'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: h initial height, s displacement, v speed.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d'); const h=document.getElementById('h'), g=document.getElementById('g'); const hv=document.getElementById('hv'), gv=document.getElementById('gv'); let t=0;
+        function sy(y){return 340-y*10}
+        function draw(){const H=parseFloat(h.value), G=parseFloat(g.value); hv.textContent=H.toFixed(1)+' m'; gv.textContent=G.toFixed(1)+' m/s²'; const tf=Math.sqrt(2*H/G); t+=0.016; if(t>tf){t=tf;} const s=0.5*G*t*t, y=Math.max(0,H-s), v=G*t; ctx.clearRect(0,0,cv.width,cv.height); ctx.strokeStyle='#7b93b5'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(140,30); ctx.lineTo(140,340); ctx.lineTo(850,340); ctx.stroke(); ctx.setLineDash([6,6]); for(let k=0;k<=H;k+=5){ctx.beginPath();ctx.moveTo(130,sy(k));ctx.lineTo(150,sy(k));ctx.stroke();} ctx.setLineDash([]); ctx.fillStyle='#ff6f7a'; ctx.beginPath(); ctx.arc(140, sy(y), 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#29405f'; ctx.fillText('t='+t.toFixed(2)+' s', 200, 80); ctx.fillText('v='+v.toFixed(2)+' m/s', 200, 110); ctx.fillText('s='+s.toFixed(2)+' m', 200, 140); requestAnimationFrame(draw);} draw();
+        </script>
+        """.replace('__H__', str(params.get('h', 20.0))).replace('__G__', str(params.get('g', 9.8)))
+        show_html(html, 500)
+
+    elif experiment_name == "欧姆定律":
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>U <input id='u' type='range' min='0' max='__UMAX__' step='0.1' value='__U__'></label><span id='uv'></span>
+            <label>R <input id='r' type='range' min='1' max='20' step='0.5' value='__R__'></label><span id='rv'></span>
+          </div>
+          <canvas id='cv' width='980' height='420' style='width:100%;background:#f7f9fd;border-radius:16px'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: U voltage, I current, R resistance. I = U / R.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d'); const u=document.getElementById('u'),r=document.getElementById('r'),uv=document.getElementById('uv'),rv=document.getElementById('rv');
+        function draw(){const U=parseFloat(u.value), R=parseFloat(r.value), I=U/R; uv.textContent=U.toFixed(2)+' V'; rv.textContent=R.toFixed(1)+' Ω'; ctx.clearRect(0,0,cv.width,cv.height);
+        ctx.strokeStyle='#334e78'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(100,120); ctx.lineTo(100,300); ctx.lineTo(320,300); ctx.lineTo(320,120); ctx.lineTo(100,120); ctx.stroke();
+        ctx.strokeRect(320,180,140,60); ctx.fillStyle='#334e78'; ctx.font='18px Arial'; ctx.fillText('R',385,215); ctx.strokeStyle='#e67e22'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(460,210); ctx.lineTo(720,210); ctx.stroke();
+        for(let i=0;i<6;i++){ctx.fillStyle='rgba(85,194,255,'+(0.35+i*0.1)+')'; ctx.beginPath(); ctx.arc(500+i*32+((performance.now()/16)%32),210,7,0,Math.PI*2); ctx.fill();}
+        ctx.fillStyle='#29405f'; ctx.fillText('PS',80,220); ctx.fillText('U='+U.toFixed(2)+' V',120,90); ctx.fillText('R='+R.toFixed(1)+' Ω',350,170); ctx.fillText('I='+I.toFixed(2)+' A',530,170);
+        ctx.beginPath(); ctx.moveTo(760,310); ctx.lineTo(950,310); ctx.lineTo(950,60); ctx.strokeStyle='#cad4e7'; ctx.lineWidth=2; ctx.stroke();
+        ctx.strokeStyle='#4d83d8'; ctx.beginPath(); for(let k=0;k<=10;k++){let x=780+k*15,y=290-(U*(k/10)/R)*40; if(k===0){ctx.moveTo(x,y);} else {ctx.lineTo(x,y);}} ctx.stroke(); ctx.fillText('I-U',900,80);
+        requestAnimationFrame(draw);} draw();
+        </script>
+        """.replace('__UMAX__', str(params.get('voltage_max', 12.0))).replace('__U__', str(min(6, params.get('voltage_max', 12.0)))).replace('__R__', str(params.get('resistance', 5.0)))
+        show_html(html, 520)
+
+    elif experiment_name == "凸透镜成像":
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>f <input id='f' type='range' min='5' max='20' step='0.5' value='__F__'></label><span id='fv'></span>
+            <label><input id='showF' type='checkbox' checked> show F</label>
+            <button onclick='lensX=0;objX=-180;'>Reset</button>
+            <span style='opacity:.8'>Drag object or lens directly on canvas.</span>
+          </div>
+          <canvas id='cv' width='980' height='430' style='width:100%;background:#f7f9fd;border-radius:16px;cursor:grab'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: u object distance, v image distance, F focal point.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d'); const fEl=document.getElementById('f'),fv=document.getElementById('fv'),showF=document.getElementById('showF'); let objX=-180,lensX=0,drag='';
+        function toX(x){return 490 + x} function fromX(px){return px - 490}
+        function drawArrow(x,h,color,up){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(toX(x),315);ctx.lineTo(toX(x),315-h);ctx.stroke();ctx.beginPath(); if(up){ctx.moveTo(toX(x)-10,315-h+18);ctx.lineTo(toX(x),315-h);ctx.lineTo(toX(x)+10,315-h+18);} else {ctx.moveTo(toX(x)-10,315-h-18);ctx.lineTo(toX(x),315-h);ctx.lineTo(toX(x)+10,315-h-18);} ctx.fill();}
+        function draw(){const f=parseFloat(fEl.value)*9; fv.textContent=(f/9).toFixed(1)+' cm'; ctx.clearRect(0,0,cv.width,cv.height); ctx.strokeStyle='#7b93b5'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(40,315); ctx.lineTo(940,315); ctx.stroke(); ctx.strokeStyle='#4d83d8'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(toX(lensX),85); ctx.lineTo(toX(lensX),350); ctx.stroke(); ctx.beginPath(); ctx.moveTo(toX(lensX)-20,105); ctx.lineTo(toX(lensX),75); ctx.lineTo(toX(lensX)+20,105); ctx.stroke(); ctx.beginPath(); ctx.moveTo(toX(lensX)-20,330); ctx.lineTo(toX(lensX),360); ctx.lineTo(toX(lensX)+20,330); ctx.stroke();
+        if(showF.checked){ctx.setLineDash([6,6]); ctx.strokeStyle='#d6a56a'; [lensX-f,lensX+f,lensX-2*f,lensX+2*f].forEach(v=>{ctx.beginPath();ctx.moveTo(toX(v),65);ctx.lineTo(toX(v),355);ctx.stroke();}); ctx.setLineDash([]); ctx.fillStyle='#29405f'; ctx.fillText('F',toX(lensX-f)-3,305); ctx.fillText('F',toX(lensX+f)-3,305);}
+        const u=lensX-objX; let v=(Math.abs(u-f)<1e-6)?999:(f*u)/(u-f); let m=Math.abs(v/u); let real=u>f; let imgX=lensX+v; let imgH=Math.max(40,110*m); drawArrow(objX,110,'#ff6f7a',true); drawArrow(imgX,real?-imgH:imgH,'#4d83d8',!real);
+        ctx.strokeStyle='#f2a444'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(toX(objX),205); ctx.lineTo(toX(lensX),205); if(real){ctx.lineTo(toX(imgX),315);} else {ctx.lineTo(toX(lensX)+220,205);} ctx.stroke();
+        ctx.strokeStyle='#7ab0ff'; ctx.beginPath(); ctx.moveTo(toX(objX),205); ctx.lineTo(toX(lensX),315); if(real){ctx.lineTo(toX(imgX),315-imgH);} else {ctx.lineTo(toX(lensX)+220,380);} ctx.stroke();
+        ctx.strokeStyle='#8ad0b5'; ctx.beginPath(); ctx.moveTo(toX(objX),205); if(real){ctx.lineTo(toX(imgX),315-imgH);} else {ctx.lineTo(toX(lensX)+240,160);} ctx.stroke();
+        if(!real){ctx.setLineDash([6,4]); ctx.strokeStyle='#8ad0b5'; ctx.beginPath(); ctx.moveTo(toX(objX),205); ctx.lineTo(toX(imgX),315-imgH); ctx.stroke(); ctx.setLineDash([]);}
+        ctx.fillStyle='#29405f'; ctx.font='18px Arial'; ctx.fillText('u='+(u/9).toFixed(1)+' cm',60,55); ctx.fillText('v='+(v/9).toFixed(1)+' cm',220,55); ctx.fillText(real?'real':'virtual',390,55); ctx.fillText('m='+m.toFixed(2),530,55);
+        requestAnimationFrame(draw)}
+        cv.onmousedown=(e)=>{const r=cv.getBoundingClientRect(),mx=(e.clientX-r.left)*cv.width/r.width; const x=fromX(mx); if(Math.abs(x-objX)<24){drag='obj';} else if(Math.abs(x-lensX)<24){drag='lens';}};
+        cv.onmousemove=(e)=>{if(!drag)return; const r=cv.getBoundingClientRect(),mx=(e.clientX-r.left)*cv.width/r.width; const x=Math.max(-380,Math.min(380,fromX(mx))); if(drag==='obj'){objX=Math.min(lensX-30,x);} else {lensX=x;}}; window.onmouseup=()=>{drag='';}; draw();
+        </script>
+        """.replace('__F__', str(params.get('f', 10.0)))
+        show_html(html, 530)
+
+    elif experiment_name == "牛顿第二定律":
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>F <input id='F' type='range' min='0' max='20' step='0.2' value='6'></label><span id='Fv'></span>
+            <label>m <input id='m' type='range' min='0.5' max='10' step='0.1' value='__M__'></label><span id='mv'></span>
+            <button onclick='x=0;v=0'>Reset</button>
+          </div>
+          <canvas id='cv' width='980' height='400' style='width:100%;background:#f7f9fd;border-radius:16px'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: a = F / m. Increase F or reduce m to observe faster motion.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d'); const F=document.getElementById('F'),m=document.getElementById('m'),Fv=document.getElementById('Fv'),mv=document.getElementById('mv'); let x=0,v=0;
+        function draw(){const ff=parseFloat(F.value), mm=parseFloat(m.value), a=ff/mm; Fv.textContent=ff.toFixed(1)+' N'; mv.textContent=mm.toFixed(1)+' kg'; v+=a*0.016; x+=v*0.35; if(x>660){x=0;v=0;} ctx.clearRect(0,0,cv.width,cv.height); ctx.strokeStyle='#7b93b5'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(50,300); ctx.lineTo(930,300); ctx.stroke(); ctx.fillStyle='#7da6e8'; ctx.fillRect(100+x,240,120,60); ctx.fillStyle='#29405f'; ctx.font='18px Arial'; ctx.fillText('m',155+x,275); ctx.strokeStyle='#ef6d6d'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(230+x,270); ctx.lineTo(310+x,270); ctx.stroke(); ctx.beginPath(); ctx.moveTo(310+x,270); ctx.lineTo(290+x,258); ctx.lineTo(290+x,282); ctx.fillStyle='#ef6d6d'; ctx.fill(); ctx.fillStyle='#29405f'; ctx.fillText('F='+ff.toFixed(1)+' N',70,70); ctx.fillText('m='+mm.toFixed(1)+' kg',70,100); ctx.fillText('a='+a.toFixed(2)+' m/s²',70,130); requestAnimationFrame(draw);} draw();
+        </script>
+        """.replace('__M__', str(params.get('mass', 2.0)))
+        show_html(html, 500)
+
+    else:
+        html = """
+        <div style='color:#d7e4ff;font-family:Arial,sans-serif;padding:6px 4px 10px 4px;'>
+          <div style='display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px'>
+            <label>P <input id='p' type='range' min='50' max='1500' step='10' value='__P__'></label><span id='pv'></span>
+            <label>m <input id='m' type='range' min='0.2' max='3' step='0.1' value='__M__'></label><span id='mv'></span>
+            <label>c <input id='c' type='range' min='500' max='5000' step='50' value='__C__'></label><span id='cvv'></span>
+            <button onclick='t=0'>Reset</button>
+          </div>
+          <canvas id='cv' width='980' height='420' style='width:100%;background:#f7f9fd;border-radius:16px'></canvas>
+          <div style='margin-top:8px;color:#9fb5d6'>Symbols: ΔT = Pt / (mc). Same power heats a smaller mass faster.</div>
+        </div>
+        <script>
+        const cv=document.getElementById('cv'),ctx=cv.getContext('2d'); const p=document.getElementById('p'),m=document.getElementById('m'),c=document.getElementById('c'),pv=document.getElementById('pv'),mv=document.getElementById('mv'),cvv=document.getElementById('cvv'); let t=0;
+        function draw(){const P=parseFloat(p.value), M=parseFloat(m.value), C=parseFloat(c.value); pv.textContent=P.toFixed(0)+' W'; mv.textContent=M.toFixed(1)+' kg'; cvv.textContent=C.toFixed(0); t+=0.25; if(t>180){t=180;} const dT=P*t/(M*C), T=20+dT; ctx.clearRect(0,0,cv.width,cv.height); ctx.fillStyle='#dce7f7'; ctx.fillRect(150,120,180,180); ctx.fillStyle='#90c3ff'; const waterH=Math.min(160,120+T*2.6); ctx.fillRect(165,300-waterH,150,waterH); ctx.strokeStyle='#334e78'; ctx.lineWidth=4; ctx.strokeRect(150,120,180,180); ctx.strokeStyle='#e67e22'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(240,310); ctx.lineTo(240,360); ctx.stroke(); for(let i=0;i<7;i++){ctx.fillStyle='rgba(255,120,60,'+(0.18+i*0.1)+')'; ctx.beginPath(); ctx.arc(240+(Math.sin((performance.now()/200)+i)*18), 350-i*18, 12-i, 0, Math.PI*2); ctx.fill();} ctx.fillStyle='#29405f'; ctx.font='18px Arial'; ctx.fillText('T='+T.toFixed(2)+' °C',420,120); ctx.fillText('ΔT='+dT.toFixed(2)+' °C',420,150); ctx.fillText('t='+t.toFixed(1)+' s',420,180); requestAnimationFrame(draw);} draw();
+        </script>
+        """.replace('__P__', str(params.get('power', 500.0))).replace('__M__', str(params.get('mass', 1.0))).replace('__C__', str(params.get('c', 4200.0)))
+        show_html(html, 520)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 def render_experiment_demo(experiment_name, df, params, result):
     total = len(df)
     idx, play_clicked, speed = get_manual_index(df, experiment_name)
 
-    chart_placeholder = st.empty()
+    demo_tab, interactive_tab = st.tabs(["标准演示", "交互实验"])
 
-    def render_guiding_questions():
-        st.markdown("### 引导思考")
-        if experiment_name == "平抛运动":
-            st.write("1. 为什么水平方向速度几乎不变？")
-            st.write("2. 为什么竖直方向速度越来越大？")
-            st.write("3. 为什么轨迹不是直线而是抛物线？")
-        elif experiment_name == "自由落体":
-            st.write("1. 为什么下落越到后面越快？")
-            st.write("2. 为什么速度—时间图像接近直线？")
-            st.write("3. 为什么位移与时间平方有关？")
-        elif experiment_name == "欧姆定律":
-            st.write("1. 为什么电压越大，电流越大？")
-            st.write("2. 为什么图像是一条直线？")
-            st.write("3. 电阻改变后图像斜率会怎样变化？")
-        elif experiment_name == "凸透镜成像":
-            st.write("1. 物体靠近焦点时像距为什么会明显变化？")
-            st.write("2. 为什么焦内会形成虚像？")
-            st.write("3. 物距变化时像的正倒和大小如何变化？")
-        elif experiment_name == "牛顿第二定律":
-            st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
-            st.write("2. 图像过原点说明了什么？")
-            st.write("3. 如果质量变大，图像会发生什么变化？")
-        else:
-            st.write("1. 为什么加热时间越长温度越高？")
-            st.write("2. 为什么质量或比热容变大时升温会变慢？")
-            st.write("3. 恒定功率加热时温度变化趋势有何特点？")
+    with interactive_tab:
+        render_interactive_experiment(experiment_name, params)
 
-    def draw_frame(frame_idx):
-        row = df.iloc[frame_idx]
-        progress = frame_idx / max(total - 1, 1)
+    with demo_tab:
+        chart_placeholder = st.empty()
 
-        with chart_placeholder.container():
-            top_left, top_right = st.columns([1.06, 1.06])
+        def render_guiding_questions():
+            st.markdown("### 引导思考")
+            if experiment_name == "平抛运动":
+                st.write("1. 为什么水平方向速度几乎不变？")
+                st.write("2. 为什么竖直方向速度越来越大？")
+                st.write("3. 为什么轨迹不是直线而是抛物线？")
+            elif experiment_name == "自由落体":
+                st.write("1. 为什么下落越到后面越快？")
+                st.write("2. 为什么速度—时间图像接近直线？")
+                st.write("3. 为什么位移与时间平方有关？")
+            elif experiment_name == "欧姆定律":
+                st.write("1. 为什么电压越大，电流越大？")
+                st.write("2. 为什么图像是一条直线？")
+                st.write("3. 电阻改变后图像斜率会怎样变化？")
+            elif experiment_name == "凸透镜成像":
+                st.write("1. 物体靠近焦点时像距为什么会明显变化？")
+                st.write("2. 为什么焦内会形成虚像？")
+                st.write("3. 物距变化时像的正倒和大小如何变化？")
+            elif experiment_name == "牛顿第二定律":
+                st.write("1. 为什么质量不变时 a 会随 F 增大而增大？")
+                st.write("2. 图像过原点说明了什么？")
+                st.write("3. 如果质量变大，图像会发生什么变化？")
+            else:
+                st.write("1. 为什么加热时间越长温度越高？")
+                st.write("2. 为什么质量或比热容变大时升温会变慢？")
+                st.write("3. 恒定功率加热时温度变化趋势有何特点？")
 
-            with top_left:
-                st.markdown("#### 运动图像 / 关系图像")
-                if experiment_name == "平抛运动":
-                    st.pyplot(plot_projectile_trajectory(df, params["h"], frame_idx), use_container_width=True, clear_figure=True)
-                elif experiment_name == "自由落体":
-                    st.pyplot(plot_freefall_main(df, frame_idx), use_container_width=True, clear_figure=True)
-                elif experiment_name == "欧姆定律":
-                    st.pyplot(plot_ohm(df, frame_idx), use_container_width=True, clear_figure=True)
-                elif experiment_name == "凸透镜成像":
-                    st.pyplot(plot_lens(df, params["f"], frame_idx), use_container_width=True, clear_figure=True)
-                elif experiment_name == "牛顿第二定律":
-                    st.pyplot(plot_newton(df, frame_idx), use_container_width=True, clear_figure=True)
-                else:
-                    st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
-                render_plot_notation_help(experiment_name)
+        def draw_frame(frame_idx):
+            row = df.iloc[frame_idx]
+            progress = frame_idx / max(total - 1, 1)
 
-            with top_right:
-                st.markdown("#### 实验装置 / 动态示意")
-                if experiment_name == "平抛运动":
-                    st.pyplot(draw_projectile_device(params["h"], row, params["v0"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                elif experiment_name == "自由落体":
-                    st.pyplot(draw_freefall_device(params["h"], row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                elif experiment_name == "欧姆定律":
-                    st.pyplot(draw_ohm_device(row, params["resistance"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                elif experiment_name == "凸透镜成像":
-                    st.pyplot(draw_lens_device(params["f"] / 4, row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                elif experiment_name == "牛顿第二定律":
-                    st.pyplot(draw_newton_device(row, params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                else:
-                    st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
-                render_plot_notation_help(experiment_name)
+            with chart_placeholder.container():
+                top_left, top_right = st.columns([1.06, 1.06])
 
-            lower_left, lower_right = st.columns([1.12, 0.88])
-            with lower_left:
-                render_state_panel(experiment_name, row, params, result, progress)
-            with lower_right:
-                render_guiding_questions()
+                with top_left:
+                    st.markdown("#### 运动图像 / 关系图像")
+                    if experiment_name == "平抛运动":
+                        st.pyplot(plot_projectile_trajectory(df, params["h"], frame_idx), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "自由落体":
+                        st.pyplot(plot_freefall_main(df, frame_idx), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "欧姆定律":
+                        st.pyplot(plot_ohm(df, frame_idx), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "凸透镜成像":
+                        st.pyplot(plot_lens(df, params["f"], frame_idx), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "牛顿第二定律":
+                        st.pyplot(plot_newton(df, frame_idx), use_container_width=True, clear_figure=True)
+                    else:
+                        st.pyplot(plot_heat(df, frame_idx), use_container_width=True, clear_figure=True)
+                    render_plot_notation_help(experiment_name)
 
-        return row
+                with top_right:
+                    st.markdown("#### 实验装置 / 动态示意")
+                    if experiment_name == "平抛运动":
+                        st.pyplot(draw_projectile_device(params["h"], row, params["v0"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "自由落体":
+                        st.pyplot(draw_freefall_device(params["h"], row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "欧姆定律":
+                        st.pyplot(draw_ohm_device(row, params["resistance"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "凸透镜成像":
+                        st.pyplot(draw_lens_device(params["f"] / 4, row, frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    elif experiment_name == "牛顿第二定律":
+                        st.pyplot(draw_newton_device(row, params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    else:
+                        st.pyplot(draw_heat_device(row, params["power"], params["mass"], frame_idx, len(df)), use_container_width=True, clear_figure=True)
+                    render_plot_notation_help(experiment_name)
 
-    current_row = draw_frame(idx)
+                lower_left, lower_right = st.columns([1.12, 0.88])
+                with lower_left:
+                    render_state_panel(experiment_name, row, params, result, progress)
+                with lower_right:
+                    render_guiding_questions()
+            return row
 
-    if play_clicked:
-        frame_sequence = build_playback_frames(total, idx, speed)
-        delay_map = {1: 0.08, 2: 0.055, 4: 0.036, 8: 0.022}
-        for frame_idx in frame_sequence:
-            st.session_state[f"frame_{experiment_name}_实验过程"] = frame_idx
-            current_row = draw_frame(frame_idx)
-            time.sleep(delay_map.get(speed, 0.045))
-
-        st.session_state[f"frame_{experiment_name}_实验过程"] = total - 1
-
-    return current_row
-
+        current_row = draw_frame(idx)
+        if play_clicked:
+            frame_sequence = build_playback_frames(total, idx, speed)
+            delay_map = {1: 0.08, 2: 0.055, 4: 0.036, 8: 0.022}
+            for frame_idx in frame_sequence:
+                st.session_state[f"frame_{experiment_name}_实验过程"] = frame_idx
+                current_row = draw_frame(frame_idx)
+                time.sleep(delay_map.get(speed, 0.045))
+            st.session_state[f"frame_{experiment_name}_实验过程"] = total - 1
+        return current_row
 
 def render_analysis_tab(experiment_name, df, params):
     idx = len(df) - 1 if len(df) > 0 else 0
@@ -1707,7 +1892,7 @@ def render_analysis_tab(experiment_name, df, params):
             fig, ax = plt.subplots(figsize=(8.8, 5))
             ax.plot(df["时间(s)"], df["水平位移x(m)"], label="x-t", color="#3f7fd0", linewidth=2.3)
             ax.plot(df["时间(s)"], df["竖直高度y(m)"], label="y-t", color="#ef6d6d", linewidth=2.3)
-            ax.set_title("位移—时间图像", fontsize=16, fontweight="bold")
+            ax.set_title("x-t & y-t", fontsize=16, fontweight="bold")
             ax.set_xlabel("t / s")
             ax.grid(True, alpha=0.22)
             ax.legend()
@@ -1719,7 +1904,7 @@ def render_analysis_tab(experiment_name, df, params):
         fig, ax = plt.subplots(figsize=(8.8, 5))
         ax.plot(df["时间(s)"], df["下落位移s(m)"], label="位移 s-t", color="#3f7fd0", linewidth=2.4)
         ax.plot(df["时间(s)"], df["速度v(m/s)"], label="v-t", color="#ef6d6d", linewidth=2.4)
-        ax.set_title("自由落体图像", fontsize=16, fontweight="bold")
+        ax.set_title("free fall", fontsize=16, fontweight="bold")
         ax.set_xlabel("t / s")
         ax.grid(True, alpha=0.22)
         ax.legend()
@@ -1904,7 +2089,7 @@ if role == "学生端":
             <div class="hero-subtitle">
                 当前学生：<b>{student_name}</b>（{class_name}，学号：{student_id}）&nbsp;&nbsp;|&nbsp;&nbsp;
                 当前实验：<b>{experiment_name}</b><br>
-                平台目前仅用于咸阳师范学院马田毕业设计使用。
+                平台支持多实验仿真、动画演示、图像分析、规律总结、实验测试、过程性评价、智能评语与教师端统计分析。
             </div>
         </div>
         """,
@@ -2117,8 +2302,8 @@ else:
                 colors = ["#7faef5", "#8fd3c8", "#ffc46b", "#f59aa0", "#a7b8ff", "#8ec5ff"]
                 ax.bar(exp_stats["实验名称"], exp_stats["综合得分"], color=colors[:len(exp_stats)])
                 ax.set_ylim(0, 100)
-                ax.set_title("各实验平均成绩", fontsize=16, fontweight="bold")
-                ax.set_ylabel("平均分")
+                ax.set_title("Avg Score", fontsize=16, fontweight="bold")
+                ax.set_ylabel("Score")
                 ax.grid(axis="y", alpha=0.22)
                 plt.xticks(rotation=20)
                 fig.tight_layout()
@@ -2137,4 +2322,4 @@ else:
             st.dataframe(filtered, use_container_width=True, height=320)
             st.download_button("下载筛选后的教师统计数据 CSV", to_csv_bytes(filtered), file_name="教师端统计数据.csv", mime="text/csv")
 
-st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，平台目前仅用于咸阳师范学院马田毕业设计使用。</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer-note">开发说明：本平台使用 Python + Streamlit + NumPy + Pandas + Matplotlib 实现，已包含多实验、动画演示、学生端、教师端、账号注册登录、过程性评价与文本分析。</div>', unsafe_allow_html=True)
